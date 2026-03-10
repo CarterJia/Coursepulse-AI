@@ -10,7 +10,22 @@
 
 ---
 
-### Task 1: Scaffold Infrastructure and Shared Environment
+## Execution Log
+
+- 2026-03-10 17:32 EDT: `Task 1` verified complete.
+  - Local check passed: `.venv/bin/python -m pytest backend/tests/test_env_smoke.py -v`
+  - Container check passed: `docker compose run --rm backend pytest tests/test_env_smoke.py -v`
+- 2026-03-10 17:34 EDT: `Task 2` verified complete.
+  - Local check passed: `PYTHONPATH=backend .venv/bin/python -m pytest backend/tests/test_health.py -v`
+- Next restart point:
+  - Start at `Task 3`
+  - First test to run after creating it: `PYTHONPATH=backend .venv/bin/python -m pytest backend/tests/test_models.py -v`
+
+---
+
+### ~~Task 1: Scaffold Infrastructure and Shared Environment~~
+
+**Status:** Completed and verified on 2026-03-10 17:32 EDT
 
 **Files:**
 - Create: `docker-compose.yml`
@@ -20,7 +35,7 @@
 - Create: `backend/requirements.txt`
 - Create: `frontend/package.json`
 
-**Step 1: Write the failing test**
+**Step 1: Write the failing test** ~~Completed~~
 
 Create `backend/tests/test_env_smoke.py`:
 
@@ -34,31 +49,33 @@ def test_required_env_names_exist():
     assert "DATABASE_URL" in required
 ```
 
-**Step 2: Run test to verify it fails**
+**Step 2: Run test to verify it fails** ~~Completed~~
 
 Run: `pytest backend/tests/test_env_smoke.py -v`
 Expected: FAIL because the test file and test environment do not exist yet.
 
-**Step 3: Write minimal implementation**
+**Step 3: Write minimal implementation** ~~Completed~~
 
 - Add a `docker-compose.yml` with `frontend`, `backend`, and `db`
 - Add `.env.example` with the required environment variables
 - Add minimal Dockerfiles for backend and frontend
 - Add dependency manifests
 
-**Step 4: Run test to verify it passes**
+**Step 4: Run test to verify it passes** ~~Completed~~
 
 Run: `pytest backend/tests/test_env_smoke.py -v`
 Expected: PASS
 
-**Step 5: Commit**
+**Step 5: Commit** ~~Completed~~
 
 ```bash
 git add docker-compose.yml .env.example backend/Dockerfile frontend/Dockerfile backend/requirements.txt frontend/package.json backend/tests/test_env_smoke.py
 git commit -m "chore: scaffold local infrastructure"
 ```
 
-### Task 2: Create Backend App Skeleton and Health Routes
+### ~~Task 2: Create Backend App Skeleton and Health Routes~~
+
+**Status:** Completed and verified on 2026-03-10 17:34 EDT
 
 **Files:**
 - Create: `backend/app/main.py`
@@ -67,7 +84,7 @@ git commit -m "chore: scaffold local infrastructure"
 - Create: `backend/app/__init__.py`
 - Create: `backend/tests/test_health.py`
 
-**Step 1: Write the failing test**
+**Step 1: Write the failing test** ~~Completed~~
 
 Create `backend/tests/test_health.py`:
 
@@ -84,12 +101,12 @@ def test_healthcheck_returns_ok():
     assert response.json() == {"status": "ok"}
 ```
 
-**Step 2: Run test to verify it fails**
+**Step 2: Run test to verify it fails** ~~Completed~~
 
 Run: `pytest backend/tests/test_health.py -v`
 Expected: FAIL with import errors because the app files do not exist yet.
 
-**Step 3: Write minimal implementation**
+**Step 3: Write minimal implementation** ~~Completed~~
 
 Implement:
 
@@ -115,12 +132,12 @@ def healthcheck():
     return {"status": "ok"}
 ```
 
-**Step 4: Run test to verify it passes**
+**Step 4: Run test to verify it passes** ~~Completed~~
 
 Run: `pytest backend/tests/test_health.py -v`
 Expected: PASS
 
-**Step 5: Commit**
+**Step 5: Commit** ~~Completed~~
 
 ```bash
 git add backend/app backend/tests/test_health.py
