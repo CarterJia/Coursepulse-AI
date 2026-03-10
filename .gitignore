@@ -1,0 +1,10 @@
+.worktrees/
+.env
+storage/
+.DS_Store
+__pycache__/
+*.pyc
+node_modules/
+.next/
+dist/
+build/
