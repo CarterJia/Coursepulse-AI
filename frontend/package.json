@@ -1,0 +1,17 @@
+{
+  "name": "coursepulse-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "echo \"Frontend tests not configured yet\" && exit 1"
+  },
+  "dependencies": {
+    "next": "15.1.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  }
+}
