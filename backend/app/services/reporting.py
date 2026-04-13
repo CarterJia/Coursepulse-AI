@@ -26,3 +26,8 @@ def generate_section_report(query: str, chunks: list[dict[str, Any]]) -> dict[st
     prompt = build_report_prompt(query, chunks)
     # In production, this sends the prompt to Claude / GPT and returns the response.
     return {"title": query, "body": prompt}
+
+
+def generate_chapter_report(title: str, context: str) -> str:
+    """Generate expanded lecture note for a chapter. Placeholder — replaced by GPT-4o call in Task 7."""
+    return f"# {title}\n\n{context}"
