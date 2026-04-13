@@ -1,0 +1,26 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+
+export async function uploadDocument(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/api/documents/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  return res.json();
+}
+
+export async function getJobStatus(jobId: string) {
+  const res = await fetch(`${API_BASE}/api/jobs/${jobId}`);
+  return res.json();
+}
+
+export async function uploadAssignment(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/api/assignments/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  return res.json();
+}
