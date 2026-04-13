@@ -1,8 +1,19 @@
-from app.services.reporting import build_report_prompt
+from unittest.mock import MagicMock, patch
+
+from app.services.reporting import generate_chapter_report
 
 
-def test_build_report_prompt_includes_context_chunks():
-    chunks = [{"page_number": 2, "text": "Gradient descent updates weights by moving opposite the gradient."}]
-    prompt = build_report_prompt("Explain gradient descent", chunks)
-    assert "Explain gradient descent" in prompt
-    assert "opposite the gradient" in prompt
+@patch("app.services.reporting.get_openai_client")
+def test_generate_chapter_report_calls_gpt4o(mock_get_client):
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.return_value = MagicMock(
+        choices=[MagicMock(message=MagicMock(content="# Expanded Lecture\n\nDetailed notes here."))]
+    )
+    mock_get_client.return_value = mock_client
+
+    result = generate_chapter_report("Chapter: Pages 1-4", "Limits define continuity.")
+
+    assert "Expanded Lecture" in result or "Detailed notes" in result
+    mock_client.chat.completions.create.assert_called_once()
+    call_kwargs = mock_client.chat.completions.create.call_args
+    assert call_kwargs[1]["model"] == "gpt-4o"
