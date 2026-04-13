@@ -1,11 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface GlossaryEntry {
+  id: string;
   term: string;
   definition: string;
-  analogy?: string;
+  analogy?: string | null;
 }
 
 interface GlossaryPanelProps {
@@ -13,31 +23,32 @@ interface GlossaryPanelProps {
 }
 
 export function GlossaryPanel({ entries }: GlossaryPanelProps) {
-  const [expanded, setExpanded] = useState<string | null>(null);
-
   if (entries.length === 0) return null;
 
   return (
-    <aside className="border-l pl-4 ml-4">
-      <h3 className="font-semibold mb-2">Glossary</h3>
-      <ul className="space-y-2">
-        {entries.map((entry) => (
-          <li key={entry.term}>
-            <button
-              className="text-blue-600 underline text-sm"
-              onClick={() => setExpanded(expanded === entry.term ? null : entry.term)}
-            >
-              {entry.term}
-            </button>
-            {expanded === entry.term && (
-              <div className="mt-1 text-sm text-gray-600">
-                <p>{entry.definition}</p>
-                {entry.analogy && <p className="italic mt-1">{entry.analogy}</p>}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    </aside>
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="sm">
+          Glossary ({entries.length})
+        </Button>
+      </SheetTrigger>
+      <SheetContent className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Glossary</SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 space-y-4">
+          {entries.map((entry) => (
+            <div key={entry.id}>
+              <Badge variant="secondary" className="mb-1">{entry.term}</Badge>
+              <p className="text-sm text-muted-foreground">{entry.definition}</p>
+              {entry.analogy && (
+                <p className="text-sm italic text-muted-foreground/70 mt-1">{entry.analogy}</p>
+              )}
+              <Separator className="mt-3" />
+            </div>
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
