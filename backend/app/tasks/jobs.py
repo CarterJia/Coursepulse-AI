@@ -1,29 +1,28 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
 
-# In-memory job store for MVP; replaced by DB queries when Postgres is wired.
-_job_store: dict[str, dict[str, Any]] = {}
+from sqlalchemy.orm import Session
 
-
-def create_job(job_type: str) -> str:
-    job_id = str(uuid.uuid4())
-    _job_store[job_id] = {
-        "job_id": job_id,
-        "job_type": job_type,
-        "status": "queued",
-        "error_message": None,
-    }
-    return job_id
+from app.models.job import Job
 
 
-def get_job(job_id: str) -> dict[str, Any] | None:
-    return _job_store.get(job_id)
+def create_job(db: Session, job_type: str) -> Job:
+    job = Job(id=uuid.uuid4(), job_type=job_type, status="queued")
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
 
 
-def update_job_status(job_id: str, status: str, error_message: str | None = None) -> None:
-    if job_id in _job_store:
-        _job_store[job_id]["status"] = status
+def get_job(db: Session, job_id: str) -> Job | None:
+    return db.get(Job, uuid.UUID(job_id) if isinstance(job_id, str) else job_id)
+
+
+def update_job_status(db: Session, job_id: str, status: str, error_message: str | None = None) -> None:
+    job = get_job(db, job_id)
+    if job:
+        job.status = status
         if error_message is not None:
-            _job_store[job_id]["error_message"] = error_message
+            job.error_message = error_message
+        db.commit()
