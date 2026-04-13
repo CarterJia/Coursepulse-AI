@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.assignments import router as assignments_router
 from app.api.routes.documents import router as documents_router
+from app.api.routes.glossary import router as glossary_router
 from app.api.routes.health import router as health_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.reports import router as reports_router
@@ -22,3 +23,4 @@ app.include_router(documents_router, prefix="/api")
 app.include_router(reports_router, prefix="/api")
 app.include_router(jobs_router, prefix="/api")
 app.include_router(assignments_router, prefix="/api")
+app.include_router(glossary_router, prefix="/api")
