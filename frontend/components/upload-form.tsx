@@ -1,6 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { uploadDocument } from "@/lib/api";
 
 interface UploadFormProps {
   onUploaded?: (data: { document_id: string; job_id: string }) => void;
@@ -9,31 +12,50 @@ interface UploadFormProps {
 export function UploadForm({ onUploaded }: UploadFormProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const file = inputRef.current?.files?.[0];
-    if (!file) return;
-
+  const handleFile = useCallback(async (file: File) => {
     setUploading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"}/api/documents/upload`,
-        { method: "POST", body: (() => { const fd = new FormData(); fd.append("file", file); return fd; })() }
-      );
-      const data = await res.json();
+      const data = await uploadDocument(file);
       onUploaded?.(data);
     } finally {
       setUploading(false);
     }
-  }
+  }, [onUploaded]);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <input ref={inputRef} type="file" accept=".pdf,.pptx,.png,.jpg,.jpeg" />
-      <button type="submit" disabled={uploading} className="px-4 py-2 bg-blue-600 text-white rounded">
-        {uploading ? "Uploading..." : "Upload"}
-      </button>
-    </form>
+    <Card
+      className={`border-2 border-dashed transition-colors ${dragOver ? "border-primary bg-muted" : "border-muted-foreground/25"}`}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file) handleFile(file);
+      }}
+    >
+      <CardContent className="flex flex-col items-center justify-center py-10 gap-4">
+        <p className="text-muted-foreground text-sm">Drop your PDF here, or click to browse</p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".pdf"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+          }}
+        />
+        <Button
+          variant="outline"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+        >
+          {uploading ? "Uploading..." : "Upload"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

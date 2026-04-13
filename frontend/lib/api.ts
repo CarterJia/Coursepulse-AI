@@ -15,6 +15,21 @@ export async function getJobStatus(jobId: string) {
   return res.json();
 }
 
+export async function listDocuments() {
+  const res = await fetch(`${API_BASE}/api/documents`);
+  return res.json();
+}
+
+export async function getDocument(id: string) {
+  const res = await fetch(`${API_BASE}/api/documents/${id}`);
+  return res.json();
+}
+
+export async function getGlossary(documentId: string) {
+  const res = await fetch(`${API_BASE}/api/documents/${documentId}/glossary`);
+  return res.json();
+}
+
 export async function uploadAssignment(file: File) {
   const formData = new FormData();
   formData.append("file", file);
