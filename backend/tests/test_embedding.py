@@ -1,21 +1,16 @@
 from unittest.mock import MagicMock, patch
+import numpy as np
 
-from app.services.embedding import generate_embedding
+from app.services.embedding import generate_embedding, EMBEDDING_DIM
 
 
-@patch("app.services.embedding.get_openai_client")
-def test_generate_embedding_calls_openai(mock_get_client):
-    mock_client = MagicMock()
-    mock_client.embeddings.create.return_value = MagicMock(
-        data=[MagicMock(embedding=[0.1] * 1536)]
-    )
-    mock_get_client.return_value = mock_client
+@patch("app.services.embedding._get_model")
+def test_generate_embedding_returns_correct_dim(mock_get_model):
+    mock_model = MagicMock()
+    mock_model.encode.return_value = np.random.randn(EMBEDDING_DIM).astype(np.float32)
+    mock_get_model.return_value = mock_model
 
     result = generate_embedding("test text")
 
-    assert len(result) == 1536
-    assert result[0] == 0.1
-    mock_client.embeddings.create.assert_called_once_with(
-        model="text-embedding-3-small",
-        input="test text",
-    )
+    assert len(result) == EMBEDDING_DIM
+    mock_model.encode.assert_called_once_with("test text", normalize_embeddings=True)

@@ -25,7 +25,7 @@ def generate_chapter_report(chapter_title: str, context: str) -> str:
     client = get_openai_client()
     prompt = CHAPTER_REPORT_PROMPT.format(chapter_title=chapter_title, context=context)
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="deepseek-chat",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
     )

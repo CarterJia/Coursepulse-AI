@@ -10,7 +10,7 @@ def extract_glossary(text: str) -> list[dict[str, str]]:
     client = get_openai_client()
     prompt = GLOSSARY_EXTRACT_PROMPT.format(text=text)
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="deepseek-chat",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2,
     )

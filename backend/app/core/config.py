@@ -10,7 +10,7 @@ class Settings(BaseModel):
         "postgresql+psycopg://coursepulse:coursepulse@db:5432/coursepulse",
     )
     file_storage_root: str = os.getenv("FILE_STORAGE_ROOT", "/app/storage")
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
+    deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
 
 
 settings = Settings()

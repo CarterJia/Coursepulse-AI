@@ -6,7 +6,7 @@ from app.services.retrieval import retrieve_top_chunks
 
 @patch("app.services.retrieval.generate_embedding")
 def test_retrieve_top_chunks_queries_pgvector(mock_embed):
-    mock_embed.return_value = [0.1] * 1536
+    mock_embed.return_value = [0.1] * 512
 
     mock_row = MagicMock()
     mock_row.id = uuid4()

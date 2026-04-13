@@ -1,12 +1,21 @@
 from __future__ import annotations
 
-from app.services.openai_client import get_openai_client
+from sentence_transformers import SentenceTransformer
+
+_model: SentenceTransformer | None = None
+
+MODEL_NAME = "BAAI/bge-small-zh-v1.5"
+EMBEDDING_DIM = 512
+
+
+def _get_model() -> SentenceTransformer:
+    global _model
+    if _model is None:
+        _model = SentenceTransformer(MODEL_NAME)
+    return _model
 
 
 def generate_embedding(text: str) -> list[float]:
-    client = get_openai_client()
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=text,
-    )
-    return response.data[0].embedding
+    model = _get_model()
+    vector = model.encode(text, normalize_embeddings=True)
+    return vector.tolist()

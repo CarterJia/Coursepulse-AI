@@ -22,7 +22,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://coursepulse:coursepulse@db:5432/coursepulse}
       FILE_STORAGE_ROOT: ${FILE_STORAGE_ROOT:-/app/storage}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-replace-me}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-replace-me}
     volumes:
       - ./backend:/app/backend
       - ./storage:/app/storage
