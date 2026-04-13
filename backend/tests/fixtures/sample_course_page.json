@@ -1,0 +1,14 @@
+[
+  {
+    "page_number": 1,
+    "text": "Introduction to Calculus. Limits define continuity and are the foundation for derivatives."
+  },
+  {
+    "page_number": 2,
+    "text": "Derivatives measure the rate of change of a function. The derivative of f(x) at a point gives the slope of the tangent line."
+  },
+  {
+    "page_number": 3,
+    "text": "Integration is the reverse process of differentiation. The definite integral computes the area under a curve."
+  }
+]
