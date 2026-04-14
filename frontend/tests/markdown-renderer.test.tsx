@@ -3,6 +3,16 @@ import "@testing-library/jest-dom";
 
 import { MarkdownRenderer } from "../components/markdown-renderer";
 
+jest.mock("mermaid", () => ({
+  __esModule: true,
+  default: {
+    initialize: jest.fn(),
+    render: jest.fn(() => Promise.resolve({ svg: "<svg></svg>" })),
+  },
+}));
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mermaid = require("mermaid").default as { render: jest.Mock };
 
 test("renders plain markdown bold", () => {
   render(<MarkdownRenderer content="**hello**" />);
@@ -31,4 +41,19 @@ test("renders GFM tables", () => {
   const md = "| A | B |\n|---|---|\n| 1 | 2 |";
   render(<MarkdownRenderer content={md} />);
   expect(screen.getByRole("table")).toBeInTheDocument();
+});
+
+test("renders muted fallback when Mermaid render fails", async () => {
+  mermaid.render.mockRejectedValueOnce(new Error("syntax boom"));
+  const md = "```mermaid\nthis is not valid mermaid syntax\n```";
+
+  const { container } = render(<MarkdownRenderer content={md} />);
+
+  // Wait for the effect to flush the rejected promise.
+  await screen.findByText("（图示加载失败）");
+
+  const fallback = container.querySelector(".mermaid-fallback");
+  expect(fallback).not.toBeNull();
+  expect(fallback?.textContent).toBe("（图示加载失败）");
+  expect(fallback?.className).toContain("italic");
 });

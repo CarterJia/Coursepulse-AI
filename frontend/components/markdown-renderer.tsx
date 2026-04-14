@@ -31,8 +31,13 @@ function MermaidBlock({ code }: { code: string }) {
         .then(({ svg }) => {
           if (ref.current) ref.current.innerHTML = svg;
         })
-        .catch((err) => {
-          if (ref.current) ref.current.innerHTML = `<pre>Mermaid error: ${String(err)}</pre>`;
+        .catch(() => {
+          if (ref.current) {
+            ref.current.innerHTML = "";
+            ref.current.className =
+              "mermaid-fallback text-xs text-muted-foreground italic my-2";
+            ref.current.textContent = "（图示加载失败）";
+          }
         });
     }
   }, [code]);
