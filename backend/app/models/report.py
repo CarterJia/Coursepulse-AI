@@ -14,6 +14,7 @@ class Report(Base):
     document_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("documents.id"))
     title: Mapped[str] = mapped_column(String(512))
     body: Mapped[str] = mapped_column(Text)
+    section_type: Mapped[str] = mapped_column(String(32), nullable=False, default="topic")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
