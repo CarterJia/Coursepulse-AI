@@ -157,3 +157,45 @@ def generate_plan(
     raise PlanValidationError(
         f"Pass-1 failed after {max_retries} attempts. Last error: {last_error}"
     )
+
+
+FALLBACK_CHAPTER_SIZE = 4
+
+
+def build_fallback_plan(pages: list[dict]) -> dict:
+    """Build a minimal valid plan by chunking every 4 pages.
+
+    Used when Pass-1 fails all retries. Produces a degraded but complete plan
+    that downstream can consume identically.
+    """
+    topics: list[dict] = []
+    for i in range(0, len(pages), FALLBACK_CHAPTER_SIZE):
+        chunk = pages[i : i + FALLBACK_CHAPTER_SIZE]
+        source_pages = [p["page_number"] for p in chunk]
+        start = source_pages[0]
+        end = source_pages[-1]
+        topics.append({
+            "title": f"章节 (第 {start}-{end} 页)" if start != end else f"章节 (第 {start} 页)",
+            "source_pages": source_pages,
+            "uses_images_from_pages": [],
+            "key_points": ["(此主题由机械分块生成, 无语义摘要)"],
+            "exam_tips": ["(无可用考点提示, 请直接阅读原课件)"],
+            "common_mistakes": ["(无可用易错点提示)"],
+        })
+
+    return {
+        "overview": "本课件生成计划时 LLM 失败, 已退化为按页分块模式. 建议重新上传或检查 API 连通性.",
+        "tldr": [
+            "LLM 计划生成失败, 下列章节为机械分块",
+            "每章节对应固定页数 (默认 4 页)",
+            "仍会对每段调用 LLM 生成展开讲解",
+            "考点与易错点提示不可用",
+            "建议重新上传以获得完整报告",
+        ],
+        "topics": topics,
+        "exam_summary": {
+            "must_know": ["(无可用汇总, 请参考各章节原文)"],
+            "common_pitfalls": ["(无可用易错点汇总)"],
+        },
+        "quick_review": ["阅读各章节原文", "重新上传以重试完整流水线"],
+    }
