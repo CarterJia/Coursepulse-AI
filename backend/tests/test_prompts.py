@@ -36,3 +36,26 @@ def test_build_retry_prompt_includes_previous_response_and_error():
     assert prev in retry
     assert err in retry
     assert "修正" in retry or "fix" in retry.lower()
+
+
+def test_topic_write_prompt_has_mermaid_strict_rules():
+    # Strict Mermaid rules must be present so the LLM stops emitting
+    # labels with parens/brackets that break the renderer.
+    assert "Mermaid" in TOPIC_WRITE_PROMPT
+    assert "graph LR" in TOPIC_WRITE_PROMPT or "graph TD" in TOPIC_WRITE_PROMPT
+    assert '( ) [ ] { }' in TOPIC_WRITE_PROMPT
+    assert '双引号' in TOPIC_WRITE_PROMPT
+
+
+def test_topic_write_prompt_has_strict_image_rule():
+    # Hard rule: only use paths from the provided list.
+    assert "只使用" in TOPIC_WRITE_PROMPT
+    assert "可用图片" in TOPIC_WRITE_PROMPT
+    assert "不要编造" in TOPIC_WRITE_PROMPT
+
+
+def test_topic_write_prompt_has_list_format_rule():
+    # Forbid "1. xx 2. yy 3. zz" inline paragraphs.
+    assert "1. 2. 3." in TOPIC_WRITE_PROMPT
+    assert "- " in TOPIC_WRITE_PROMPT
+    assert "不要在同一段" in TOPIC_WRITE_PROMPT
