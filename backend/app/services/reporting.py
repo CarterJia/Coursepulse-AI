@@ -14,6 +14,8 @@ New pipeline (Pass-2 topic writer):
 from __future__ import annotations
 
 import logging
+import os
+import re
 import uuid as _uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
@@ -32,6 +34,29 @@ from app.services.report_planner import (
 logger = logging.getLogger(__name__)
 
 MAX_PASS2_WORKERS = 4
+
+_IMG_PATTERN = re.compile(r"!\[([^\]]*)\]\(/api/files/([^/]+)/([^)]+)\)")
+
+
+def _strip_missing_images(body: str, document_id: str, derived_root: str) -> str:
+    """Remove markdown image refs whose files don't exist under derived_root.
+
+    Hallucinated-path defense: the LLM sometimes references image files it
+    imagines (e.g. ``page_7_img_0.png``) that PyMuPDF never extracted.
+    Rather than showing a broken-image placeholder, we strip the entire
+    ``![](...)`` ref before insert. Refs that exist pass through unchanged.
+    """
+
+    def replace(match: "re.Match[str]") -> str:
+        ref_doc_id, filename = match.group(2), match.group(3)
+        if ref_doc_id != document_id:
+            return ""  # wrong doc id → hallucinated
+        full_path = os.path.join(derived_root, "derived", ref_doc_id, filename)
+        if not os.path.isfile(full_path):
+            return ""  # file not on disk → hallucinated
+        return match.group(0)
+
+    return _IMG_PATTERN.sub(replace, body)
 
 
 # ---------------------------------------------------------------------------
