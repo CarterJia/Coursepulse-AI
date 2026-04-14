@@ -5,7 +5,14 @@ This file evolves across Task 4 (validator), Task 5 (generate_plan), Task 6 (fal
 
 from __future__ import annotations
 
+import json
+import logging
 from typing import Any
+
+from app.services.openai_client import get_openai_client
+from app.services.prompts import REPORT_PLAN_PROMPT, build_retry_prompt
+
+logger = logging.getLogger(__name__)
 
 
 class PlanValidationError(ValueError):
@@ -84,3 +91,69 @@ def validate_plan(plan: Any, max_page: int) -> None:
     for item in quick_review:
         if not isinstance(item, str):
             raise PlanValidationError("quick_review items must be strings")
+
+
+def _build_pages_block(pages: list[dict]) -> str:
+    parts: list[str] = []
+    for p in pages:
+        parts.append(f"[PAGE {p['page_number']}]\n{p['text']}")
+    return "\n\n".join(parts)
+
+
+def _build_image_manifest_block(manifest: dict[int, list[str]]) -> str:
+    if not manifest:
+        return "(本课件未提取到任何嵌入图片)"
+    lines: list[str] = []
+    for page, files in sorted(manifest.items()):
+        lines.append(f"- 第 {page} 页有 {len(files)} 张图片")
+    return "\n".join(lines)
+
+
+def generate_plan(
+    pages: list[dict],
+    image_manifest: dict[int, list[str]],
+    max_retries: int = 5,
+) -> dict:
+    """Pass-1 call: build a validated report plan via DeepSeek JSON mode with retries.
+
+    Returns a validated plan dict on success. On total failure, raises
+    PlanValidationError (caller should fall back).
+    """
+    client = get_openai_client()
+    max_page = max((p["page_number"] for p in pages), default=0)
+
+    pages_block = _build_pages_block(pages)
+    manifest_block = _build_image_manifest_block(image_manifest)
+    base_prompt = REPORT_PLAN_PROMPT.format(
+        pages_block=pages_block,
+        image_manifest_block=manifest_block,
+    )
+
+    current_prompt = base_prompt
+    last_error = None
+    last_response = None
+
+    for attempt in range(max_retries):
+        content = ""
+        try:
+            response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[{"role": "user", "content": current_prompt}],
+                response_format={"type": "json_object"},
+                temperature=0.2,
+            )
+            content = response.choices[0].message.content or ""
+            plan = json.loads(content)
+            validate_plan(plan, max_page=max_page)
+            logger.info("Pass-1 plan generated on attempt %d", attempt + 1)
+            return plan
+        except (json.JSONDecodeError, PlanValidationError) as e:
+            last_error = str(e)
+            last_response = content
+            logger.warning("Pass-1 attempt %d failed: %s", attempt + 1, last_error)
+            current_prompt = build_retry_prompt(base_prompt, last_response, last_error)
+            continue
+
+    raise PlanValidationError(
+        f"Pass-1 failed after {max_retries} attempts. Last error: {last_error}"
+    )
