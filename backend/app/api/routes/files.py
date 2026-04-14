@@ -23,8 +23,8 @@ def serve_file(document_id: str, filename: str):
     if not SAFE_FILENAME.match(filename) or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
 
-    base = os.path.abspath(os.path.join(settings.file_storage_root, "derived", str(doc_uuid)))
-    target = os.path.abspath(os.path.join(base, filename))
+    base = os.path.realpath(os.path.join(settings.file_storage_root, "derived", str(doc_uuid)))
+    target = os.path.realpath(os.path.join(base, filename))
 
     if not target.startswith(base + os.sep) and target != base:
         raise HTTPException(status_code=400, detail="Path traversal rejected")
