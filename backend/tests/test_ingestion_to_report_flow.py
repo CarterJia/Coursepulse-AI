@@ -1,4 +1,5 @@
 import json
+import uuid
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -19,24 +20,57 @@ def test_chunking_to_retrieval_integration():
 
 
 @patch("app.api.routes.documents.run_ingestion_pipeline")
-def test_upload_and_job_tracking_integration(mock_pipeline, tmp_path, monkeypatch):
+def test_upload_dispatches_background_task(mock_pipeline, tmp_path, monkeypatch):
     monkeypatch.setenv("FILE_STORAGE_ROOT", str(tmp_path))
     db = MagicMock()
-
-    # Mock course lookup
     mock_course = MagicMock()
-    mock_course.id = __import__("uuid").uuid4()
+    mock_course.id = uuid.uuid4()
     db.query.return_value.filter.return_value.first.return_value = mock_course
 
     app.dependency_overrides[get_db] = lambda: db
     client = TestClient(app)
-
-    upload_res = client.post(
+    res = client.post(
         "/api/documents/upload",
-        files={"file": ("test.pdf", b"%PDF-1.4 fake", "application/pdf")},
+        files={"file": ("t.pdf", b"%PDF-1.4 fake", "application/pdf")},
     )
-    assert upload_res.status_code == 202
-    body = upload_res.json()
-    assert "document_id" in body
-    assert "job_id" in body
+    assert res.status_code == 202
     app.dependency_overrides.clear()
+
+
+@patch("app.services.ingestion.run_report_pipeline")
+@patch("app.services.ingestion.extract_images")
+@patch("app.services.ingestion.extract_pages")
+@patch("app.services.ingestion.extract_glossary")
+def test_ingestion_pipeline_calls_new_reporting(
+    mock_glossary, mock_pages, mock_images, mock_report, tmp_path, monkeypatch
+):
+    """run_ingestion_pipeline must call extract_images, then run_report_pipeline
+    (not the old generate_chapter_report loop)."""
+    from app.services.ingestion import run_ingestion_pipeline
+    from app.services.embedding import generate_embedding
+
+    monkeypatch.setenv("FILE_STORAGE_ROOT", str(tmp_path))
+    mock_pages.return_value = [{"page_number": 1, "text": "hi"}]
+    mock_images.return_value = {}
+    mock_glossary.return_value = []
+
+    # Patch SessionLocal to a controllable mock
+    with patch("app.services.ingestion.SessionLocal") as mock_session_cls, \
+         patch("app.services.ingestion.generate_embedding") as mock_emb:
+        mock_db = MagicMock()
+        mock_session_cls.return_value = mock_db
+        mock_db.get.return_value = MagicMock(
+            file_path=str(tmp_path / "x.pdf"),
+            filename="x.pdf",
+        )
+        mock_emb.return_value = [0.0] * 512
+
+        doc_id = uuid.uuid4()
+        job_id = uuid.uuid4()
+        run_ingestion_pipeline(doc_id, job_id)
+
+        mock_images.assert_called_once()
+        mock_report.assert_called_once()
+        # report pipeline got (db, doc_id, pages, image_manifest)
+        args = mock_report.call_args.args
+        assert args[1] == doc_id

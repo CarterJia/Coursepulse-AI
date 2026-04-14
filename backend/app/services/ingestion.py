@@ -1,22 +1,25 @@
 from __future__ import annotations
 
 import logging
+import os
 import uuid
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models.course import Course
 from app.models.document import Document, DocumentPage
 from app.models.job import Job
 from app.models.knowledge_chunk import Embedding, KnowledgeChunk
-from app.models.report import GlossaryEntry, Report
+from app.models.report import GlossaryEntry
 from app.services.chunking import build_chunks
 from app.services.embedding import generate_embedding
 from app.services.glossary import extract_glossary
+from app.services.image_extraction import extract_images
 from app.services.parser import extract_pages
-from app.services.reporting import generate_chapter_report
+from app.services.reporting import run_report_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -55,15 +58,13 @@ def create_ingestion_job(db: Session) -> Job:
     return job
 
 
-CHAPTER_SIZE = 4
+def _derived_dir(document_id: uuid.UUID) -> str:
+    root = settings.file_storage_root
+    return os.path.join(root, "derived", str(document_id))
 
 
 def run_ingestion_pipeline(document_id: uuid.UUID, job_id: uuid.UUID) -> None:
-    """Run the full ingestion pipeline with its own DB session.
-
-    This function creates its own session because it runs as a BackgroundTask,
-    after the request's session has already been closed.
-    """
+    """Full pipeline, owns its own DB session (runs as BackgroundTask)."""
     db = SessionLocal()
     try:
         job = db.get(Job, job_id)
@@ -85,9 +86,12 @@ def run_ingestion_pipeline(document_id: uuid.UUID, job_id: uuid.UUID) -> None:
             ))
         db.commit()
 
-        # 2. Chunk pages
+        # 2. Extract embedded images
+        image_manifest = extract_images(doc.file_path, _derived_dir(document_id))
+        logger.info("Extracted images from %d page(s)", len(image_manifest))
+
+        # 3. Chunk pages
         raw_chunks = build_chunks(pages)
-        logger.info("Built %d chunks", len(raw_chunks))
         chunk_records: list[KnowledgeChunk] = []
         for c in raw_chunks:
             chunk = KnowledgeChunk(
@@ -100,41 +104,28 @@ def run_ingestion_pipeline(document_id: uuid.UUID, job_id: uuid.UUID) -> None:
             db.add(chunk)
             chunk_records.append(chunk)
         db.commit()
+        logger.info("Built %d chunks", len(chunk_records))
 
-        # 3. Embed chunks (raw SQL for pgvector column)
-        for idx, chunk in enumerate(chunk_records):
+        # 4. Embed chunks
+        for chunk in chunk_records:
             vector = generate_embedding(chunk.text)
-            emb_id = uuid.uuid4()
             db.execute(
                 sa.text(
                     "INSERT INTO embeddings (id, chunk_id, vector, created_at) "
                     "VALUES (:id, :chunk_id, :vector, NOW())"
                 ),
-                {"id": str(emb_id), "chunk_id": str(chunk.id), "vector": str(vector)},
+                {"id": str(uuid.uuid4()), "chunk_id": str(chunk.id), "vector": str(vector)},
             )
         db.commit()
         logger.info("Embedded %d chunks", len(chunk_records))
 
-        # 4. Generate chapter reports
-        num_chapters = (len(pages) + CHAPTER_SIZE - 1) // CHAPTER_SIZE
-        for i in range(0, len(pages), CHAPTER_SIZE):
-            chapter_pages = pages[i : i + CHAPTER_SIZE]
-            start_page = chapter_pages[0]["page_number"]
-            end_page = chapter_pages[-1]["page_number"]
-            title = f"Chapter: Pages {start_page}-{end_page}"
-            context = "\n\n".join(p["text"] for p in chapter_pages)
-            chapter_num = i // CHAPTER_SIZE + 1
-            logger.info("Generating report %d/%d: %s", chapter_num, num_chapters, title)
-            body = generate_chapter_report(title, context)
-            db.add(Report(
-                id=uuid.uuid4(), document_id=document_id, title=title, body=body
-            ))
-            db.commit()  # commit after each chapter so progress is visible
-        logger.info("Generated %d chapter reports", num_chapters)
+        # 5. Two-pass report pipeline (writes all section-typed rows)
+        run_report_pipeline(db, document_id, pages, image_manifest)
+        db.commit()
+        logger.info("Report pipeline complete for document %s", document_id)
 
-        # 5. Extract glossary
+        # 6. Glossary extraction
         all_text = "\n\n".join(p["text"] for p in pages)
-        logger.info("Extracting glossary terms...")
         for item in extract_glossary(all_text):
             db.add(GlossaryEntry(
                 id=uuid.uuid4(),
@@ -153,8 +144,9 @@ def run_ingestion_pipeline(document_id: uuid.UUID, job_id: uuid.UUID) -> None:
         logger.exception("Ingestion failed for document %s: %s", document_id, e)
         db.rollback()
         job = db.get(Job, job_id)
-        job.status = "failed"
-        job.error_message = str(e)[:500]
-        db.commit()
+        if job:
+            job.status = "failed"
+            job.error_message = str(e)[:500]
+            db.commit()
     finally:
         db.close()
