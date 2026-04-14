@@ -14,11 +14,20 @@ New pipeline (Pass-2 topic writer):
 from __future__ import annotations
 
 import logging
+import uuid as _uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from sqlalchemy.orm import Session
+
+from app.models.report import Report
 from app.services.openai_client import get_openai_client
 from app.services.prompts import CHAPTER_REPORT_PROMPT, TOPIC_WRITE_PROMPT
+from app.services.report_planner import (
+    PlanValidationError,
+    build_fallback_plan,
+    generate_plan,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -127,3 +136,88 @@ def generate_all_topic_cards(
             for t in topics
         ]
         return [f.result() for f in futures]
+
+
+# ---------------------------------------------------------------------------
+# Pipeline orchestration
+# ---------------------------------------------------------------------------
+
+
+def _render_tldr_body(tldr: list[str]) -> str:
+    return "\n".join(f"- {item}" for item in tldr)
+
+
+def _render_exam_summary_body(exam_summary: dict) -> str:
+    lines: list[str] = ["### 🔥 必考清单\n"]
+    for item in exam_summary.get("must_know", []):
+        lines.append(f"- {item}")
+    lines.append("\n### 💣 整体易错点\n")
+    for item in exam_summary.get("common_pitfalls", []):
+        lines.append(f"- {item}")
+    return "\n".join(lines)
+
+
+def _render_quick_review_body(items: list[str]) -> str:
+    return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
+
+
+def run_report_pipeline(
+    db: Session,
+    document_id: _uuid.UUID,
+    pages: list[dict],
+    image_manifest: dict[int, list[str]],
+) -> None:
+    """Two-pass pipeline: Pass-1 plan -> Pass-2 topic cards -> write all rows to `reports`.
+
+    Caller commits. On Pass-1 total failure, falls back to page-based plan.
+    """
+    # Pass 1
+    try:
+        plan = generate_plan(pages, image_manifest, max_retries=5)
+        logger.info("Pass-1 plan generated for document %s", document_id)
+    except PlanValidationError as e:
+        logger.warning("Pass-1 failed for %s (%s); using fallback plan", document_id, e)
+        plan = build_fallback_plan(pages)
+
+    # Pass 2 (concurrent)
+    topic_cards = generate_all_topic_cards(
+        plan["topics"], pages, image_manifest, document_id=str(document_id)
+    )
+
+    # Write rows
+    db.add(Report(
+        id=_uuid.uuid4(),
+        document_id=document_id,
+        title="课件概览",
+        body=plan["overview"],
+        section_type="overview",
+    ))
+    db.add(Report(
+        id=_uuid.uuid4(),
+        document_id=document_id,
+        title="核心要点速览",
+        body=_render_tldr_body(plan["tldr"]),
+        section_type="tldr",
+    ))
+    for topic, card_body in zip(plan["topics"], topic_cards):
+        db.add(Report(
+            id=_uuid.uuid4(),
+            document_id=document_id,
+            title=topic["title"],
+            body=card_body,
+            section_type="topic",
+        ))
+    db.add(Report(
+        id=_uuid.uuid4(),
+        document_id=document_id,
+        title="考点与易错点汇总",
+        body=_render_exam_summary_body(plan["exam_summary"]),
+        section_type="exam_summary",
+    ))
+    db.add(Report(
+        id=_uuid.uuid4(),
+        document_id=document_id,
+        title="30 分钟急救包",
+        body=_render_quick_review_body(plan["quick_review"]),
+        section_type="quick_review",
+    ))
