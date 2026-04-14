@@ -43,7 +43,7 @@ def test_topic_write_prompt_has_mermaid_strict_rules():
     # labels with parens/brackets that break the renderer.
     assert "Mermaid" in TOPIC_WRITE_PROMPT
     assert "graph LR" in TOPIC_WRITE_PROMPT or "graph TD" in TOPIC_WRITE_PROMPT
-    assert '( ) [ ] { }' in TOPIC_WRITE_PROMPT
+    assert '( ) [ ] {{ }}' in TOPIC_WRITE_PROMPT
     assert '双引号' in TOPIC_WRITE_PROMPT
 
 
@@ -59,3 +59,18 @@ def test_topic_write_prompt_has_list_format_rule():
     assert "1. 2. 3." in TOPIC_WRITE_PROMPT
     assert "- " in TOPIC_WRITE_PROMPT
     assert "不要在同一段" in TOPIC_WRITE_PROMPT
+
+
+def test_topic_write_prompt_formats_cleanly():
+    """Regression: all literal braces in TOPIC_WRITE_PROMPT must be
+    either format placeholders or escaped ({{ }}). Otherwise .format()
+    raises KeyError at runtime in generate_topic_card."""
+    TOPIC_WRITE_PROMPT.format(
+        topic_title="t",
+        source_pages="[1]",
+        image_paths_block="-",
+        key_points="-",
+        exam_tips="-",
+        common_mistakes="-",
+        pages_block="...",
+    )
