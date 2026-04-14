@@ -74,6 +74,24 @@
   --ring: oklch(0.439 0 0);
 }
 
+/* Block-math emphasis: $$...$$ blocks get a card-like amber frame so key
+   formulas (e.g. UCT, PUCT) stand out from body text. Inline .katex is
+   untouched by design. */
+.katex-display {
+  font-size: 1.4em;
+  padding: 1rem 1.5rem;
+  margin: 1rem 0;
+  border-left: 4px solid #f59e0b;   /* amber-500 */
+  border-radius: 0.375rem;
+  background: #fffbeb;               /* amber-50 */
+  overflow-x: auto;
+}
+
+.dark .katex-display {
+  background: rgba(251, 191, 36, 0.08);
+  border-left-color: #fbbf24;        /* amber-400 */
+}
+
 @layer base {
   * {
     @apply border-border;
