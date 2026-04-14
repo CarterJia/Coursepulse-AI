@@ -28,7 +28,7 @@ async def upload_document(
         db, file.filename or "unknown", file_path, file.content_type or "application/octet-stream", course.id
     )
     job = create_ingestion_job(db)
-    background_tasks.add_task(run_ingestion_pipeline, db, doc.id, job.id)
+    background_tasks.add_task(run_ingestion_pipeline, doc.id, job.id)
     return JSONResponse(
         status_code=202,
         content={"document_id": str(doc.id), "job_id": str(job.id), "status": "queued"},
