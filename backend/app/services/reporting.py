@@ -22,6 +22,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.report import Report
 from app.services.openai_client import get_openai_client
 from app.services.prompts import CHAPTER_REPORT_PROMPT, TOPIC_WRITE_PROMPT
@@ -195,6 +196,7 @@ def run_report_pipeline(
     """Two-pass pipeline: Pass-1 plan -> Pass-2 topic cards -> write all rows to `reports`.
 
     Caller commits. On Pass-1 total failure, falls back to page-based plan.
+    Every section body is scrubbed of hallucinated image refs before insert.
     """
     # Pass 1
     try:
@@ -209,19 +211,25 @@ def run_report_pipeline(
         plan["topics"], pages, image_manifest, document_id=str(document_id)
     )
 
+    doc_id_str = str(document_id)
+    derived_root = settings.file_storage_root
+
+    def _clean(body: str) -> str:
+        return _strip_missing_images(body, doc_id_str, derived_root)
+
     # Write rows
     db.add(Report(
         id=_uuid.uuid4(),
         document_id=document_id,
         title="课件概览",
-        body=plan["overview"],
+        body=_clean(plan["overview"]),
         section_type="overview",
     ))
     db.add(Report(
         id=_uuid.uuid4(),
         document_id=document_id,
         title="核心要点速览",
-        body=_render_tldr_body(plan["tldr"]),
+        body=_clean(_render_tldr_body(plan["tldr"])),
         section_type="tldr",
     ))
     for topic, card_body in zip(plan["topics"], topic_cards):
@@ -229,20 +237,20 @@ def run_report_pipeline(
             id=_uuid.uuid4(),
             document_id=document_id,
             title=topic["title"],
-            body=card_body,
+            body=_clean(card_body),
             section_type="topic",
         ))
     db.add(Report(
         id=_uuid.uuid4(),
         document_id=document_id,
         title="考点与易错点汇总",
-        body=_render_exam_summary_body(plan["exam_summary"]),
+        body=_clean(_render_exam_summary_body(plan["exam_summary"])),
         section_type="exam_summary",
     ))
     db.add(Report(
         id=_uuid.uuid4(),
         document_id=document_id,
         title="30 分钟急救包",
-        body=_render_quick_review_body(plan["quick_review"]),
+        body=_clean(_render_quick_review_body(plan["quick_review"])),
         section_type="quick_review",
     ))

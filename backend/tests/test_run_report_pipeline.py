@@ -72,3 +72,37 @@ def test_run_report_pipeline_uses_fallback_on_pass1_failure(mock_plan, mock_card
 
     mock_fallback.assert_called_once()
     mock_cards.assert_called_once()
+
+
+def test_run_report_pipeline_strips_hallucinated_image_refs(tmp_path, monkeypatch):
+    """The pipeline must scrub image refs to files that don't exist on disk."""
+    from app.core import config
+    from app.services.reporting import run_report_pipeline
+
+    monkeypatch.setattr(config.settings, "file_storage_root", str(tmp_path))
+
+    document_id = uuid.uuid4()
+    # Create derived dir with ONE real file, so one ref should survive.
+    derived_dir = tmp_path / "derived" / str(document_id)
+    derived_dir.mkdir(parents=True)
+    (derived_dir / "real.png").write_bytes(b"")
+
+    real_url = f"/api/files/{document_id}/real.png"
+    ghost_url = f"/api/files/{document_id}/ghost.png"
+    topic_bodies = [
+        f"card A with ![]({real_url}) and ![]({ghost_url})",
+        f"card B with only ![]({ghost_url})",
+    ]
+
+    with patch("app.services.reporting.generate_all_topic_cards", return_value=topic_bodies), \
+         patch("app.services.reporting.generate_plan", return_value=PLAN):
+        db = MagicMock()
+        added: list = []
+        db.add.side_effect = lambda obj: added.append(obj)
+
+        run_report_pipeline(db, document_id, PAGES, image_manifest={})
+
+    topic_rows = [r for r in added if r.section_type == "topic"]
+    all_bodies = "\n".join(r.body for r in topic_rows)
+    assert "real.png" in all_bodies  # real ref kept
+    assert "ghost.png" not in all_bodies  # hallucinated refs stripped
