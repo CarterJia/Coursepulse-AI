@@ -62,5 +62,8 @@ def get_document(document_id: str, db: Session = Depends(get_db)):
         filename=doc.filename,
         mime_type=doc.mime_type,
         created_at=doc.created_at.isoformat(),
-        reports=[{"id": str(r.id), "title": r.title, "body": r.body} for r in reports],
+        reports=[
+            {"id": str(r.id), "title": r.title, "body": r.body, "section_type": r.section_type}
+            for r in reports
+        ],
     )

@@ -18,6 +18,7 @@ class ReportSummary(BaseModel):
     id: str
     title: str
     body: str
+    section_type: str
 
 
 class DocumentDetailResponse(BaseModel):
