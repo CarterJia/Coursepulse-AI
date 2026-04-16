@@ -49,6 +49,15 @@ def list_documents(db: Session = Depends(get_db)):
     ]
 
 
+@router.get("/documents/sample")
+def get_sample_document_id():
+    from fastapi import HTTPException
+    from app.core.config import settings
+    if not settings.sample_document_id:
+        raise HTTPException(status_code=404, detail="Sample document not configured")
+    return {"document_id": settings.sample_document_id}
+
+
 @router.get("/documents/{document_id}", response_model=DocumentDetailResponse)
 def get_document(document_id: str, db: Session = Depends(get_db)):
     import uuid
