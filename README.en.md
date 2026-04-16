@@ -96,22 +96,43 @@ erDiagram
 
 Visual explainer: [`/architecture`](https://coursepulse-ai.railway.app/architecture).
 
-## Run locally in 5 minutes
+## Getting Started
 
-Prereqs: Docker Desktop, a DeepSeek API key.
+### Option 1: Live Demo (no install)
+
+1. Open **[Live Demo](https://coursepulse-ai.railway.app)**
+2. Upload a lecture PDF (3 free uploads per IP per day)
+3. Wait 1–3 minutes — the page polls for progress and redirects to the report when ready
+4. For unlimited uploads: click **"Use my own API key"** below the upload area, paste your [DeepSeek API key](https://platform.deepseek.com/api_keys) — the key stays in your browser's localStorage only, never touches server logs
+
+### Option 2: Run locally
+
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running), a [DeepSeek API key](https://platform.deepseek.com/api_keys)
 
 ```bash
+# 1. Clone the repo
 git clone https://github.com/CarterJia/Coursepulse-AI.git
 cd Coursepulse-AI
-cp .env.example .env   # edit .env and set DEEPSEEK_API_KEY
+
+# 2. Configure environment
+cp .env.example .env
+# Open .env and replace DEEPSEEK_API_KEY=sk-your-deepseek-key-here with your real key
+
+# 3. Start all services (first build takes ~3–5 minutes)
 docker compose up
 ```
 
-Open http://localhost:3000.
+You'll know it's ready when you see:
+```
+backend  | [cleanup] Storage cleanup complete. Root: /app/storage
+backend  | INFO:     Uvicorn running on http://0.0.0.0:8000
+frontend | ▲ Next.js 15.x
+frontend |   - Local: http://0.0.0.0:3000
+```
 
-## Bring your own key
-
-The Live Demo allows 3 free uploads per IP per day. To run more, click "Use my own API key" at the bottom of the upload area and paste your DeepSeek key. The key lives in your browser's localStorage only — it never hits our server logs.
+4. Open http://localhost:3000
+5. Upload any lecture PDF and wait for the progress indicator to complete (typically 1–3 minutes depending on page count and DeepSeek API latency)
+6. Once ready, you'll be redirected to the report — topic-organized Chinese notes, glossary cards, and Bilibili video recommendations
 
 ## Stack
 

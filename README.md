@@ -96,24 +96,43 @@ erDiagram
 
 可视化讲解：访问 [`/architecture`](https://coursepulse-ai.railway.app/architecture) 页。
 
-## 5 分钟本地跑通
+## 使用流程
 
-前置：Docker Desktop、一个 DeepSeek API key。
+### 方式一：在线 Demo（无需安装）
+
+1. 打开 **[Live Demo](https://coursepulse-ai.railway.app)**
+2. 直接上传一份课件 PDF（每个 IP 每天 3 次免费额度）
+3. 等待 1–3 分钟，页面会自动轮询处理进度，完成后跳转到报告页
+4. 想要无限次使用：点击上传区下方 **"Use my own API key"**，填入你的 [DeepSeek API key](https://platform.deepseek.com/api_keys)，即可绕过配额限制（key 仅存于浏览器 localStorage，不会传到服务端日志）
+
+### 方式二：本地部署
+
+**前置条件：** [Docker Desktop](https://www.docker.com/products/docker-desktop/)（确保已启动）、一个 [DeepSeek API key](https://platform.deepseek.com/api_keys)
 
 ```bash
+# 1. 克隆仓库
 git clone https://github.com/CarterJia/Coursepulse-AI.git
 cd Coursepulse-AI
-cp .env.example .env   # 编辑 .env 填入 DEEPSEEK_API_KEY
+
+# 2. 配置环境变量
+cp .env.example .env
+# 用编辑器打开 .env，把 DEEPSEEK_API_KEY=sk-your-deepseek-key-here 替换成你的真实 key
+
+# 3. 启动所有服务（首次构建约 3–5 分钟）
 docker compose up
 ```
 
-打开 http://localhost:3000 即可使用。
+看到以下日志说明启动成功：
+```
+backend  | [cleanup] Storage cleanup complete. Root: /app/storage
+backend  | INFO:     Uvicorn running on http://0.0.0.0:8000
+frontend | ▲ Next.js 15.x
+frontend |   - Local: http://0.0.0.0:3000
+```
 
-## Bring your own key
-
-Live Demo 默认每个 IP 每天 3 次免费上传。想跑更多：在首页右下点 "Use my own API key"，填入自己的 DeepSeek API key 即可解锁无限次。
-
-key 只存在你浏览器的 localStorage，不会写入我们的数据库或日志。
+4. 打开 http://localhost:3000
+5. 上传任意 PDF 课件，等待进度条完成（通常 1–3 分钟，取决于课件页数和 DeepSeek API 响应速度）
+6. 报告生成后自动跳转——你会看到按主题分段的中文讲义、术语卡片和 B 站视频推荐
 
 ## 技术栈
 
