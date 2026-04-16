@@ -11,6 +11,8 @@ class Settings(BaseModel):
     )
     file_storage_root: str = os.getenv("FILE_STORAGE_ROOT", "/app/storage")
     deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
+    upload_quota_per_ip: int = int(os.getenv("UPLOAD_QUOTA_PER_IP", "3"))
+    sample_document_id: str = os.getenv("SAMPLE_DOCUMENT_ID", "")
 
 
 settings = Settings()
