@@ -20,7 +20,73 @@ CoursePulse AI 把课件 PDF 转成一份结构化的学习报告：按主题分
 
 ## 架构
 
-三层：Next.js 前端、FastAPI 后端、Postgres + pgvector 数据库。核心流水线是 6 步：解析 → 切片 → 向量化 → Pass-1 规划 → Pass-2 撰写 → 视频推荐。
+```
+Browser
+  │
+  ▼
+┌──────────────────┐
+│  Next.js Frontend │  shadcn/ui + Tailwind
+│  (port 3000)      │
+└────────┬─────────┘
+         │ REST API
+         ▼
+┌──────────────────┐
+│  FastAPI Backend  │
+│  (port 8000)      │
+│                   │
+│  Sync routes:     │  uploads, queries, glossary, video search
+│  BackgroundTasks: │  PDF parsing, report gen, diagnosis
+└────────┬─────────┘
+         │
+    ┌────┴────┐
+    ▼         ▼
+┌────────┐  ┌──────────┐
+│Postgres │  │ DeepSeek │
+│pgvector │  │ Chat API │
+│ (5432)  │  │ + BAAI   │
+└────────┘  │ Embedding│
+            └──────────┘
+```
+
+### 核心流水线
+
+用户上传一份 PDF 后，后端按以下 6 步生成完整报告：
+
+```mermaid
+flowchart LR
+    A["① 解析\nPyMuPDF 提取\n逐页文本+图片"] --> B["② 切片\n按语义段落\n切分知识块"]
+    B --> C["③ 向量化\nBAI/bge-small-zh\n写入 pgvector"]
+    C --> D["④ Pass-1 规划\nDeepSeek 生成\n章节大纲"]
+    D --> E["⑤ Pass-2 撰写\n逐章节扩写\n考点+易错点+公式"]
+    E --> F["⑥ 视频推荐\nB站搜索+向量\n相似度排序"]
+```
+
+### 关键设计决策
+
+| 决策 | 选择 | 理由 |
+|------|------|------|
+| LLM | DeepSeek Chat | 中文理科内容质量高，成本低于 GPT-4o |
+| Embedding | BAAI/bge-small-zh-v1.5 | 中文语义匹配优于 OpenAI 英文模型 |
+| 报告生成 | 两阶段（规划→撰写）| 单次生成容易遗漏章节或结构混乱 |
+| 视频推荐 | B 站爬虫 + 向量相似度 | 无官方 API；余弦相似度过滤噪声 |
+| 向量存储 | pgvector | 不引入额外基础设施，复用 Postgres |
+| 异步任务 | FastAPI BackgroundTasks | 单用户场景，避免 Celery/Redis 复杂度 |
+| 配额控制 | 内存计数 + BYOK 旁路 | 无需 Redis；BYOK 用户自带 key 不受限 |
+
+### 数据库核心表
+
+```mermaid
+erDiagram
+    courses ||--o{ documents : contains
+    documents ||--o{ document_pages : has
+    documents ||--o{ reports : generates
+    documents ||--o{ glossary_entries : extracts
+    documents ||--o{ video_recommendations : matches
+    document_pages ||--o{ knowledge_chunks : splits
+    knowledge_chunks ||--o{ embeddings : embeds
+    courses ||--o{ assignments : receives
+    assignments ||--o{ mistake_diagnoses : analyzes
+```
 
 可视化讲解：访问 [`/architecture`](https://coursepulse-ai.railway.app/architecture) 页。
 
@@ -30,7 +96,7 @@ CoursePulse AI 把课件 PDF 转成一份结构化的学习报告：按主题分
 
 ```bash
 git clone https://github.com/CarterJia/Coursepulse-AI.git
-cd coursepulse-ai
+cd Coursepulse-AI
 cp .env.example .env   # 编辑 .env 填入 DEEPSEEK_API_KEY
 docker compose up
 ```
@@ -50,10 +116,6 @@ key 只存在你浏览器的 localStorage，不会写入我们的数据库或日
 - Postgres 16 / pgvector
 - DeepSeek Chat / BAAI/bge-small-zh-v1.5
 - Docker Compose / Railway
-
-## 设计文档
-
-所有设计 spec 在 [`docs/superpowers/specs/`](docs/superpowers/specs/)。入门建议从 [`2026-04-13-coursepulse-full-product-design.md`](docs/superpowers/specs/2026-04-13-coursepulse-full-product-design.md) 开始。
 
 ## License
 
