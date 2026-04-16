@@ -38,11 +38,14 @@ export default function ArchitecturePage() {
         </p>
       </header>
 
-      <section aria-label="Pipeline">
+      <section>
+        <h2 className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-4">Pipeline</h2>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
           {STEPS.map((step) => (
             <div key={step.id} className={`rounded-lg border p-3 ${TONE_STYLES[step.tone]}`}>
-              <div className="text-[10px] font-bold text-indigo-600">① {step.phase}</div>
+              <div className="text-[10px] font-bold text-indigo-600">
+                {"①②③④⑤⑥"[Number(step.id) - 1]} {step.phase}
+              </div>
               <div className="mt-1 text-sm font-semibold text-gray-900">{step.tech}</div>
               <div className="mt-1 text-xs text-gray-600">{step.blurb}</div>
             </div>
@@ -51,7 +54,7 @@ export default function ArchitecturePage() {
       </section>
 
       <section aria-label="Design decisions">
-        <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold">Design decisions</p>
+        <h2 className="text-xs uppercase tracking-widest text-gray-500 font-semibold">Design decisions</h2>
         <div className="mt-4 grid md:grid-cols-3 gap-6">
           <article className="space-y-2">
             <h3 className="text-sm font-semibold text-gray-900">为什么分两个 LLM Pass？</h3>
@@ -80,7 +83,7 @@ export default function ArchitecturePage() {
       </section>
 
       <section aria-label="Stack" className="bg-gray-900 text-white rounded-lg p-6">
-        <p className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Stack</p>
+        <h2 className="text-xs uppercase tracking-widest text-gray-400 font-semibold">Stack</h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
             "Next.js 15",
