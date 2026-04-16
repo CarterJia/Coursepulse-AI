@@ -1,95 +1,60 @@
 # CoursePulse AI
 
-Transform course slides into structured teaching reports, connect knowledge gaps, and drive targeted revision through mistake diagnosis.
+Turn sleepy lecture slides into a personal TA report.
+上传 PDF，自动产出结构化讲义、术语百科、相关教学视频。
 
-## Quick Start
+**[Live Demo](https://coursepulse-ai.railway.app)** · [English](README.en.md)
 
-### Prerequisites
+---
 
-- Docker & Docker Compose
-- Node.js 22+
-- Python 3.11+
+## 做什么
 
-### Environment Setup
+CoursePulse AI 把课件 PDF 转成一份结构化的学习报告：按主题分段、抽取考点与易错点、配套公式与示意图、并从 B 站挑出相关教学视频。面向课业重、错过直播的大学生。
 
-```bash
-cp .env.example .env
-# Edit .env and set your OPENAI_API_KEY
-```
+## 功能状态
 
-### Run with Docker Compose
+✅ PDF 解析 + 两阶段 LLM 讲义生成
+✅ 语义向量 + B 站视频推荐
+🚧 错题诊断 — Vision 识别错误并回链课件
+🚧 考前复习报告 — 权重地图 + Cheat Sheet
 
-```bash
-docker compose up --build
-```
+## 架构
 
-- **Frontend:** http://localhost:3000
-- **Backend API:** http://localhost:8000
-- **API docs:** http://localhost:8000/docs
+三层：Next.js 前端、FastAPI 后端、Postgres + pgvector 数据库。核心流水线是 6 步：解析 → 切片 → 向量化 → Pass-1 规划 → Pass-2 撰写 → 视频推荐。
 
-### Local Development (without Docker)
+可视化讲解：访问 [`/architecture`](https://coursepulse-ai.railway.app/architecture) 页。
 
-**Backend:**
+## 5 分钟本地跑通
+
+前置：Docker Desktop、一个 DeepSeek API key。
 
 ```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+git clone https://github.com/CarterJia/Coursepulse-AI.git
+cd coursepulse-ai
+cp .env.example .env   # 编辑 .env 填入 DEEPSEEK_API_KEY
+docker compose up
 ```
 
-**Frontend:**
+打开 http://localhost:3000 即可使用。
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## Bring your own key
 
-### Run Tests
+Live Demo 默认每个 IP 每天 3 次免费上传。想跑更多：在首页右下点 "Use my own API key"，填入自己的 DeepSeek API key 即可解锁无限次。
 
-```bash
-# Backend
-cd backend && python -m pytest -v
+key 只存在你浏览器的 localStorage，不会写入我们的数据库或日志。
 
-# Frontend
-cd frontend && npx jest
-```
+## 技术栈
 
-## Required Environment Variables
+- Next.js 15 / TypeScript / Tailwind / shadcn/ui
+- FastAPI / SQLAlchemy / Alembic
+- Postgres 16 / pgvector
+- DeepSeek Chat / BAAI/bge-small-zh-v1.5
+- Docker Compose / Railway
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | Postgres connection string |
-| `OPENAI_API_KEY` | OpenAI API key for embeddings |
-| `FILE_STORAGE_ROOT` | Local path for uploaded files |
+## 设计文档
 
-## Data Storage
+所有设计 spec 在 [`docs/superpowers/specs/`](docs/superpowers/specs/)。入门建议从 [`2026-04-13-coursepulse-full-product-design.md`](docs/superpowers/specs/2026-04-13-coursepulse-full-product-design.md) 开始。
 
-Uploaded files are stored on disk, not in the database:
+## License
 
-- `storage/slides/` — course slide files (PDF, PPTX)
-- `storage/assignments/` — assignment / quiz images
-- `storage/derived/` — generated artifacts
-
-## MVP Scope
-
-### Included
-
-- Upload single course slides (PDF)
-- Parse and chunk slide content
-- Generate section-level teaching reports
-- Provide term definitions (glossary)
-- Recommend related short videos
-- Upload mistake images and link back to relevant slides
-- Generate simple review priorities
-
-### Not Included (deferred)
-
-- Multi-user accounts and authentication
-- Study groups and shared mistake pools
-- Classroom audio transcription and fusion
-- Deep Bilibili integration
-- Complex permission systems
-- High-quality printable cheat sheet layout engine
+MIT
