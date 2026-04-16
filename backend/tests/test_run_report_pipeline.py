@@ -18,12 +18,14 @@ PLAN = {
             "source_pages": [1],
             "uses_images_from_pages": [],
             "key_points": ["a"], "exam_tips": ["b"], "common_mistakes": ["c"],
+            "search_keywords": ["矩阵定义"],
         },
         {
             "title": "矩阵乘法",
             "source_pages": [2],
             "uses_images_from_pages": [],
             "key_points": ["x"], "exam_tips": ["y"], "common_mistakes": ["z"],
+            "search_keywords": ["矩阵乘法"],
         },
     ],
     "exam_summary": {"must_know": ["求逆"], "common_pitfalls": ["AB ≠ BA"]},
@@ -31,9 +33,10 @@ PLAN = {
 }
 
 
+@patch("app.services.reporting.recommend_videos_for_document")
 @patch("app.services.reporting.generate_all_topic_cards")
 @patch("app.services.reporting.generate_plan")
-def test_run_report_pipeline_writes_all_section_types(mock_plan, mock_cards):
+def test_run_report_pipeline_writes_all_section_types(mock_plan, mock_cards, _mock_videos):
     mock_plan.return_value = PLAN
     mock_cards.return_value = ["card A body", "card B body"]
 
@@ -58,10 +61,11 @@ def test_run_report_pipeline_writes_all_section_types(mock_plan, mock_cards):
     assert "矩阵" in overview_row.body
 
 
+@patch("app.services.reporting.recommend_videos_for_document")
 @patch("app.services.reporting.build_fallback_plan")
 @patch("app.services.reporting.generate_all_topic_cards")
 @patch("app.services.reporting.generate_plan")
-def test_run_report_pipeline_uses_fallback_on_pass1_failure(mock_plan, mock_cards, mock_fallback):
+def test_run_report_pipeline_uses_fallback_on_pass1_failure(mock_plan, mock_cards, mock_fallback, _mock_videos):
     from app.services.report_planner import PlanValidationError
     mock_plan.side_effect = PlanValidationError("total failure")
     mock_fallback.return_value = PLAN
@@ -95,7 +99,8 @@ def test_run_report_pipeline_strips_hallucinated_image_refs(tmp_path, monkeypatc
     ]
 
     with patch("app.services.reporting.generate_all_topic_cards", return_value=topic_bodies), \
-         patch("app.services.reporting.generate_plan", return_value=PLAN):
+         patch("app.services.reporting.generate_plan", return_value=PLAN), \
+         patch("app.services.reporting.recommend_videos_for_document"):
         db = MagicMock()
         added: list = []
         db.add.side_effect = lambda obj: added.append(obj)

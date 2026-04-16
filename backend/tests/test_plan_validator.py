@@ -55,3 +55,23 @@ def test_exam_summary_missing_keys_raises():
     bad = {**VALID_PLAN, "exam_summary": {"must_know": ["x"]}}  # missing common_pitfalls
     with pytest.raises(PlanValidationError, match="common_pitfalls"):
         validate_plan(bad, max_page=3)
+
+
+def test_search_keywords_defaults_to_empty_when_missing():
+    plan = {**VALID_PLAN, "topics": [{**VALID_PLAN["topics"][0]}]}
+    validate_plan(plan, max_page=3)
+    assert plan["topics"][0]["search_keywords"] == []
+
+
+def test_search_keywords_invalid_type_raises():
+    topic = {**VALID_PLAN["topics"][0], "search_keywords": "not a list"}
+    bad = {**VALID_PLAN, "topics": [topic]}
+    with pytest.raises(PlanValidationError, match="search_keywords"):
+        validate_plan(bad, max_page=3)
+
+
+def test_search_keywords_non_string_items_raises():
+    topic = {**VALID_PLAN["topics"][0], "search_keywords": [123]}
+    bad = {**VALID_PLAN, "topics": [topic]}
+    with pytest.raises(PlanValidationError, match="search_keywords"):
+        validate_plan(bad, max_page=3)

@@ -12,6 +12,7 @@ def test_report_plan_prompt_has_placeholders():
     assert "topics" in REPORT_PLAN_PROMPT
     assert "exam_summary" in REPORT_PLAN_PROMPT
     assert "quick_review" in REPORT_PLAN_PROMPT
+    assert "search_keywords" in REPORT_PLAN_PROMPT
 
 
 def test_topic_write_prompt_has_placeholders():
@@ -48,10 +49,10 @@ def test_topic_write_prompt_has_mermaid_strict_rules():
 
 
 def test_topic_write_prompt_has_strict_image_rule():
-    # Hard rule: only use paths from the provided list.
-    assert "只使用" in TOPIC_WRITE_PROMPT
-    assert "可用图片" in TOPIC_WRITE_PROMPT
-    assert "不要编造" in TOPIC_WRITE_PROMPT
+    # Hard rule: don't embed original PDF images. Use Mermaid instead.
+    assert "不要嵌入原课件图片" in TOPIC_WRITE_PROMPT
+    assert "mermaid" in TOPIC_WRITE_PROMPT.lower()
+    assert "不要输出任何" in TOPIC_WRITE_PROMPT
 
 
 def test_topic_write_prompt_has_list_format_rule():

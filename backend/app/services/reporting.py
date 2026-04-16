@@ -31,12 +31,86 @@ from app.services.report_planner import (
     build_fallback_plan,
     generate_plan,
 )
+from app.services.video_recommender import recommend_videos_for_document
 
 logger = logging.getLogger(__name__)
 
 MAX_PASS2_WORKERS = 4
 
 _IMG_PATTERN = re.compile(r"!\[([^\]]*)\]\(/api/files/([^/]+)/([^)]+)\)")
+
+# Matches a line that contains ONLY an inline-math expression (no other text,
+# optional ** bold ** wrapper). Captures the math body. Multiline so we can
+# find it anywhere in the card body. Non-greedy inside the $...$.
+_LONE_INLINE_MATH = re.compile(
+    r"^\s*(?:\*\*)?\s*\$([^\$\n]+?)\$\s*(?:\*\*)?\s*$",
+    re.MULTILINE,
+)
+
+# Same-line $$...$$ — remark-math v6 treats this as *inline*, not display, so
+# no ``.katex-display`` class is emitted and our amber frame never triggers.
+# Lift it into the three-line canonical form that remark-math recognizes.
+_SAME_LINE_DOUBLE_DOLLAR = re.compile(r"\$\$([^\n]+?)\$\$")
+
+# Mermaid fenced code block. We re-wrap unquoted node labels because the LLM
+# forgets our "quote labels with parens/commas" rule and breaks the renderer.
+_MERMAID_BLOCK = re.compile(r"```mermaid\n(.*?)```", re.DOTALL)
+_MERMAID_LABEL_UNSAFE = re.compile(r"[(),;:/\\]")
+
+
+def _quote_mermaid_labels(code: str) -> str:
+    """Wrap unquoted node labels containing special chars in double quotes.
+
+    Mermaid treats `A[N(s,a)]` as a syntax error because the unescaped ``(``
+    in the label confuses the parser. The fix is `A["N(s,a)"]`. We do the
+    same for diamonds (`{...}`). Paren nodes `(...)` are left alone — they
+    collide with mermaid's own round-node syntax and are rarely used by the
+    LLM anyway.
+    """
+    def fix(match: "re.Match[str]") -> str:
+        opener, content, closer = match.group(1), match.group(2), match.group(3)
+        if '"' in content or not _MERMAID_LABEL_UNSAFE.search(content):
+            return match.group(0)
+        return f'{opener}"{content.strip()}"{closer}'
+
+    # Square-bracket labels: `A[label]`
+    code = re.sub(r"(\[)([^\[\]\n]+?)(\])", fix, code)
+    # Diamond labels: `A{label}`
+    code = re.sub(r"(\{)([^\{\}\n]+?)(\})", fix, code)
+    return code
+
+
+def _fix_mermaid_blocks(body: str) -> str:
+    return _MERMAID_BLOCK.sub(
+        lambda m: f"```mermaid\n{_quote_mermaid_labels(m.group(1))}```",
+        body,
+    )
+
+# Leading "### 主题: X" or "主题: X" / "**主题：X**" — the LLM sometimes still
+# emits these despite the prompt forbidding it. The AccordionTrigger already
+# shows the title, so the duplicate just adds visual noise.
+_LEADING_TITLE_RE = re.compile(
+    r"\A(?:\s*(?:#{1,6}\s*)?\*?\*?\s*主题[:：].*?\n+)+",
+    re.DOTALL,
+)
+
+
+def _postprocess_topic_card(body: str) -> str:
+    """Clean up common LLM formatting drift that the prompt alone can't fix."""
+    # 1. Strip "主题: xxx" duplicate headers (any leading stack of them).
+    body = _LEADING_TITLE_RE.sub("", body)
+    # 2. Lift lone-line $...$ to three-line $$ block so remark-math sees it as display.
+    body = _LONE_INLINE_MATH.sub(
+        lambda m: f"\n\n$$\n{m.group(1).strip()}\n$$\n\n", body
+    )
+    # 3. Same-line $$X$$ also gets expanded to three-line form; remark-math v6
+    #    refuses to treat same-line $$ as display math.
+    body = _SAME_LINE_DOUBLE_DOLLAR.sub(
+        lambda m: f"\n\n$$\n{m.group(1).strip()}\n$$\n\n", body
+    )
+    # 4. Repair unquoted Mermaid node labels so the diagram actually renders.
+    body = _fix_mermaid_blocks(body)
+    return body
 
 
 def _strip_missing_images(body: str, document_id: str, derived_root: str) -> str:
@@ -184,7 +258,7 @@ def _render_exam_summary_body(exam_summary: dict) -> str:
 
 
 def _render_quick_review_body(items: list[str]) -> str:
-    return "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
+    return "\n".join(f"- {item}" for item in items)
 
 
 def run_report_pipeline(
@@ -237,7 +311,7 @@ def run_report_pipeline(
             id=_uuid.uuid4(),
             document_id=document_id,
             title=topic["title"],
-            body=_clean(card_body),
+            body=_clean(_postprocess_topic_card(card_body)),
             section_type="topic",
         ))
     db.add(Report(
@@ -254,3 +328,9 @@ def run_report_pipeline(
         body=_clean(_render_quick_review_body(plan["quick_review"])),
         section_type="quick_review",
     ))
+
+    # Video recommendations (non-blocking: failure does not affect reports)
+    try:
+        recommend_videos_for_document(db, document_id, plan["topics"])
+    except Exception:
+        logger.exception("Video recommendation failed for document %s", document_id)

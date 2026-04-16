@@ -79,6 +79,16 @@ def validate_plan(plan: Any, max_page: int) -> None:
                 if not isinstance(item, str):
                     raise PlanValidationError(f"topics[{i}].{list_key} items must be strings")
 
+        # search_keywords: optional — default to [] if LLM omits it
+        search_kw = t.get("search_keywords")
+        if search_kw is None:
+            t["search_keywords"] = []
+        else:
+            _require_list(search_kw, f"topics[{i}].search_keywords")
+            for kw in search_kw:
+                if not isinstance(kw, str):
+                    raise PlanValidationError(f"topics[{i}].search_keywords items must be strings")
+
     exam_summary = _require(plan, "exam_summary")
     if not isinstance(exam_summary, dict):
         raise PlanValidationError("exam_summary must be a dict")
@@ -181,6 +191,7 @@ def build_fallback_plan(pages: list[dict]) -> dict:
             "key_points": ["(此主题由机械分块生成, 无语义摘要)"],
             "exam_tips": ["(无可用考点提示, 请直接阅读原课件)"],
             "common_mistakes": ["(无可用易错点提示)"],
+            "search_keywords": [],
         })
 
     return {
