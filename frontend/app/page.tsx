@@ -40,16 +40,19 @@ export default function HomePage() {
           </a>
           <button
             type="button"
-            aria-disabled="true"
-            aria-describedby="sample-hint"
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white text-gray-500 px-4 py-2 text-sm font-medium cursor-not-allowed"
-            onClick={(e) => e.preventDefault()}
+            onClick={async () => {
+              const { getSampleDocumentId } = await import("@/lib/api");
+              const id = await getSampleDocumentId();
+              if (id) {
+                window.location.href = `/documents/${id}`;
+              } else {
+                alert("Sample document is not configured yet. Check back later!");
+              }
+            }}
+            className="inline-flex items-center rounded-md border border-gray-300 bg-white text-gray-900 px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             Try the sample
           </button>
-          <span id="sample-hint" className="sr-only">
-            Sample demo button is not active yet; wiring lands in a later task.
-          </span>
         </div>
       </section>
 
