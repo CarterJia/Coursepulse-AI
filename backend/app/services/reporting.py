@@ -235,7 +235,7 @@ def generate_all_topic_cards(
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = [
             pool.submit(
-                generate_topic_card, t, pages, image_manifest, document_id, api_key
+                generate_topic_card, t, pages, image_manifest, document_id, api_key=api_key
             )
             for t in topics
         ]

@@ -18,6 +18,7 @@ def get_openai_client(*, api_key: str | None = None) -> OpenAI:
     for a malformed BYOK header rather than silently falling back to the owner's
     env key). When ``api_key`` is ``None``, the cached env-driven client is used.
     """
+    # BYOK path bypasses the module cache — never memoize user-supplied keys.
     if api_key is not None:
         return OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
 
