@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, UploadFile
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
@@ -17,6 +17,7 @@ router = APIRouter()
 
 @router.post("/documents/upload", response_model=DocumentUploadResponse, status_code=202)
 async def upload_document(
+    request: Request,
     file: UploadFile,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
@@ -28,7 +29,8 @@ async def upload_document(
         db, file.filename or "unknown", file_path, file.content_type or "application/octet-stream", course.id
     )
     job = create_ingestion_job(db)
-    background_tasks.add_task(run_ingestion_pipeline, doc.id, job.id)
+    user_api_key = getattr(request.state, "user_api_key", None)
+    background_tasks.add_task(run_ingestion_pipeline, doc.id, job.id, api_key=user_api_key)
     return JSONResponse(
         status_code=202,
         content={"document_id": str(doc.id), "job_id": str(job.id), "status": "queued"},
