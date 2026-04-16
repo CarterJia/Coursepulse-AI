@@ -23,14 +23,14 @@ export function VideoCard({ video }: VideoCardProps) {
       href={video.bilibili_url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-3 rounded-lg border p-3 hover:bg-accent transition-colors"
+      className="flex gap-3 rounded-lg border border-gray-200 p-3 hover:bg-accent transition-colors"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={video.cover_url}
         alt={video.title}
         referrerPolicy="no-referrer"
-        className="w-36 h-20 object-cover rounded shrink-0"
+        className="w-36 h-20 object-cover rounded border border-gray-200 shrink-0"
       />
       <div className="flex flex-col justify-between min-w-0 flex-1">
         <p className="font-medium text-sm line-clamp-2">{video.title}</p>

@@ -16,8 +16,8 @@ interface TopicCardProps {
 
 export function TopicCard({ id, title, body, videos = [] }: TopicCardProps) {
   return (
-    <AccordionItem value={id}>
-      <AccordionTrigger className="text-lg font-semibold">{title}</AccordionTrigger>
+    <AccordionItem value={id} className="border border-gray-200 rounded-lg px-4">
+      <AccordionTrigger className="text-2xl font-semibold tracking-tight text-gray-900">{title}</AccordionTrigger>
       <AccordionContent>
         <MarkdownRenderer content={body} />
         {videos.length > 0 && (
