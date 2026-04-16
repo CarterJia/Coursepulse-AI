@@ -108,7 +108,7 @@ export function SiteHeader() {
             Architecture
           </Link>
           <a
-            href="https://github.com/carterjiagogogo/coursepulse-ai"
+            href="https://github.com/CarterJia/Coursepulse-AI"
             className="hover:text-gray-900 transition-colors"
             target="_blank"
             rel="noreferrer"
@@ -1670,7 +1670,7 @@ CoursePulse AI 把课件 PDF 转成一份结构化的学习报告：按主题分
 前置：Docker Desktop、一个 DeepSeek API key。
 
 ```bash
-git clone https://github.com/carterjiagogogo/coursepulse-ai.git
+git clone https://github.com/CarterJia/Coursepulse-AI.git
 cd coursepulse-ai
 cp .env.example .env   # 编辑 .env 填入 DEEPSEEK_API_KEY
 docker compose up
@@ -1756,7 +1756,7 @@ Visual explainer: [`/architecture`](https://coursepulse-ai.railway.app/architect
 Prereqs: Docker Desktop, a DeepSeek API key.
 
 ```bash
-git clone https://github.com/carterjiagogogo/coursepulse-ai.git
+git clone https://github.com/CarterJia/Coursepulse-AI.git
 cd coursepulse-ai
 cp .env.example .env   # edit .env and set DEEPSEEK_API_KEY
 docker compose up
