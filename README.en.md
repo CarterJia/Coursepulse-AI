@@ -1,22 +1,28 @@
 # CoursePulse AI
 
-Turn sleepy lecture slides into a personal TA report.
-Upload a PDF, get a structured study report: topic-organized notes, glossary, and relevant Bilibili teaching videos.
+An AI study tool for international students — upload lecture slides as PDF, get structured Chinese study notes, glossary, and relevant teaching video recommendations.
 
 **[Live Demo](https://coursepulse-ai.railway.app)** · [中文](README.md)
 
 ---
 
-## Who it's for
+## The Problem
 
-International students — especially those in STEM programs juggling dense English-language slides with limited native-language study resources. CoursePulse AI turns a lecture-slide PDF into a structured study report in Chinese: organized by topic, surfacing exam points and common mistakes, with formulas, diagrams, and relevant teaching videos from Bilibili.
+International STEM students face a common challenge: dense English-language slides, fast-paced lectures, and limited native-language study resources after class. CoursePulse AI turns a single lecture PDF into a complete Chinese study report:
+
+1. **Upload slides** — drop a PDF, the system parses every page's text, formulas, and diagrams
+2. **AI-generated notes** — organized by topic, each chapter expanded into clear Chinese notes with exam points, common mistakes, and key formulas
+3. **Glossary** — automatically extracts technical terms with Chinese definitions and plain-language analogies
+4. **Video recommendations** — matches each chapter's topic to relevant short videos from Bilibili
+5. **Homework diagnosis** (in development) — upload graded assignments, AI identifies mistakes and links back to the relevant slide content
+6. **Exam review** (in development) — combines slide coverage and mistake frequency to generate a review priority map and cheat sheet
 
 ## Status
 
-✅ PDF parsing + two-pass LLM note generation
-✅ Semantic embeddings + Bilibili video recommendations
-🚧 Homework diagnosis — Vision identifies mistakes and links back to slides
-🚧 Pre-exam review report — weighted topic map + cheat sheet
+- ✅ PDF parsing + two-pass LLM note generation
+- ✅ Semantic embeddings + Bilibili video recommendations
+- 🚧 Homework diagnosis — Vision identifies mistakes and links back to slides
+- 🚧 Pre-exam review report — weighted topic map + cheat sheet
 
 ## Architecture
 
