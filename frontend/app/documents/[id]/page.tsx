@@ -5,18 +5,20 @@ import { useParams } from "next/navigation";
 import { ReportViewer } from "@/components/report-viewer";
 import { GlossaryPanel } from "@/components/glossary-panel";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getDocument, getGlossary } from "@/lib/api";
+import { getDocument, getGlossary, getVideos } from "@/lib/api";
+import type { TopicVideos } from "@/lib/api";
 
 export default function DocumentDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [doc, setDoc] = useState<any>(null);
   const [glossary, setGlossary] = useState<any[]>([]);
+  const [videos, setVideos] = useState<TopicVideos[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getDocument(id), getGlossary(id)])
-      .then(([d, g]) => { setDoc(d); setGlossary(g); })
+    Promise.all([getDocument(id), getGlossary(id), getVideos(id)])
+      .then(([d, g, v]) => { setDoc(d); setGlossary(g); setVideos(v); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id]);
@@ -45,7 +47,7 @@ export default function DocumentDetailPage() {
         </div>
         <GlossaryPanel entries={glossary} />
       </div>
-      <ReportViewer reports={doc.reports ?? []} />
+      <ReportViewer reports={doc.reports ?? []} videos={videos} />
     </main>
   );
 }

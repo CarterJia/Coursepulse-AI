@@ -1,13 +1,14 @@
 import { Accordion } from "@/components/ui/accordion";
 import { TopicCard } from "@/components/topic-card";
 import { ReportSummary } from "@/components/report-summary";
-import type { Report } from "@/lib/api";
+import type { Report, TopicVideos } from "@/lib/api";
 
 interface ReportViewerProps {
   reports: Report[];
+  videos?: TopicVideos[];
 }
 
-export function ReportViewer({ reports }: ReportViewerProps) {
+export function ReportViewer({ reports, videos = [] }: ReportViewerProps) {
   if (reports.length === 0) {
     return <p className="text-muted-foreground">No reports generated yet.</p>;
   }
@@ -34,9 +35,12 @@ export function ReportViewer({ reports }: ReportViewerProps) {
       {/* Middle zone: topics accordion */}
       {topics.length > 0 && (
         <Accordion type="multiple" defaultValue={[topics[0].id]} className="space-y-2">
-          {topics.map((r) => (
-            <TopicCard key={r.id} id={r.id} title={r.title} body={r.body} />
-          ))}
+          {topics.map((r) => {
+            const topicVideos = videos.find((v) => v.topic_title === r.title)?.videos ?? [];
+            return (
+              <TopicCard key={r.id} id={r.id} title={r.title} body={r.body} videos={topicVideos} />
+            );
+          })}
         </Accordion>
       )}
 
