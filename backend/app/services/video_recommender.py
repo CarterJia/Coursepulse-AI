@@ -14,6 +14,7 @@ from app.services.embedding import generate_embedding
 logger = logging.getLogger(__name__)
 
 MAX_VIDEOS_PER_TOPIC = 2
+MIN_SIMILARITY_SCORE = 0.62
 
 
 def _cosine_similarity(a: list[float], b: list[float]) -> float:
@@ -55,7 +56,8 @@ def recommend_videos_for_topic(topic: dict[str, Any]) -> list[dict[str, Any]]:
     if not all_candidates:
         return []
 
-    topic_text = "; ".join(topic.get("key_points", [])) or topic["title"]
+    topic_parts = [topic["title"], *topic.get("search_keywords", []), *topic.get("key_points", [])]
+    topic_text = "; ".join(p for p in topic_parts if p)
 
     scored: list[dict[str, Any]] = []
     for v in all_candidates:
@@ -74,7 +76,13 @@ def recommend_videos_for_topic(topic: dict[str, Any]) -> list[dict[str, Any]]:
         })
 
     scored.sort(key=lambda x: x["similarity_score"], reverse=True)
-    return scored[:MAX_VIDEOS_PER_TOPIC]
+    top_scores = [round(s["similarity_score"], 3) for s in scored[:5]]
+    logger.warning(
+        "[video-rec] Topic '%s': %d candidates, top5 scores=%s, threshold=%.2f",
+        topic["title"], len(scored), top_scores, MIN_SIMILARITY_SCORE,
+    )
+    kept = [s for s in scored if s["similarity_score"] >= MIN_SIMILARITY_SCORE]
+    return kept[:MAX_VIDEOS_PER_TOPIC]
 
 
 def recommend_videos_for_document(

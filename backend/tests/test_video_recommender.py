@@ -31,6 +31,7 @@ def test_compute_similarity_related_higher_than_unrelated():
     assert related > unrelated
 
 
+@patch("app.services.video_recommender._compute_similarity", lambda *_: 0.9)
 @patch("app.services.video_recommender.search_videos")
 def test_recommend_videos_for_topic_deduplicates(mock_search):
     mock_search.return_value = [
@@ -48,6 +49,7 @@ def test_recommend_videos_for_topic_deduplicates(mock_search):
     assert len(bvids) == len(set(bvids))
 
 
+@patch("app.services.video_recommender._compute_similarity", lambda *_: 0.9)
 @patch("app.services.video_recommender.search_videos")
 def test_recommend_videos_for_topic_returns_max_2(mock_search):
     mock_search.return_value = [
@@ -60,6 +62,24 @@ def test_recommend_videos_for_topic_returns_max_2(mock_search):
     }
     results = recommend_videos_for_topic(topic)
     assert len(results) <= 2
+
+
+@patch("app.services.video_recommender.search_videos")
+def test_recommend_videos_for_topic_filters_below_threshold(mock_search):
+    mock_search.return_value = [
+        _make_video(bvid="BV1", title="高相关"),
+        _make_video(bvid="BV2", title="低相关"),
+    ]
+    topic = {
+        "title": "MCTS",
+        "search_keywords": ["MCTS"],
+        "key_points": ["蒙特卡洛树搜索"],
+    }
+    scores = iter([0.8, 0.3])
+    with patch("app.services.video_recommender._compute_similarity", lambda *_: next(scores)):
+        results = recommend_videos_for_topic(topic)
+    bvids = [r["bvid"] for r in results]
+    assert bvids == ["BV1"]
 
 
 @patch("app.services.video_recommender.recommend_videos_for_topic")
