@@ -1,0 +1,13 @@
+alembic==1.14.1
+fastapi==0.115.6
+httpx==0.28.1
+pgvector==0.3.6
+psycopg[binary]==3.2.3
+pymupdf==1.25.1
+pytest==8.3.4
+python-multipart==0.0.20
+sqlalchemy==2.0.36
+uvicorn[standard]==0.34.0
+openai>=1.40.0
+requests>=2.31.0
+sentence-transformers>=3.0.0

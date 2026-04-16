@@ -1,0 +1,1 @@
+"""CoursePulse backend package."""
