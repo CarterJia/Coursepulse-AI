@@ -123,13 +123,14 @@ def generate_plan(
     pages: list[dict],
     image_manifest: dict[int, list[str]],
     max_retries: int = 5,
+    api_key: str | None = None,
 ) -> dict:
     """Pass-1 call: build a validated report plan via DeepSeek JSON mode with retries.
 
     Returns a validated plan dict on success. On total failure, raises
     PlanValidationError (caller should fall back).
     """
-    client = get_openai_client()
+    client = get_openai_client(api_key=api_key)
     max_page = max((p["page_number"] for p in pages), default=0)
 
     pages_block = _build_pages_block(pages)

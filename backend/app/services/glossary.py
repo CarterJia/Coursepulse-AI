@@ -9,8 +9,8 @@ from app.services.prompts import GLOSSARY_EXTRACT_PROMPT
 logger = logging.getLogger(__name__)
 
 
-def extract_glossary(text: str) -> list[dict[str, str]]:
-    client = get_openai_client()
+def extract_glossary(text: str, api_key: str | None = None) -> list[dict[str, str]]:
+    client = get_openai_client(api_key=api_key)
     prompt = GLOSSARY_EXTRACT_PROMPT.format(text=text)
     try:
         response = client.chat.completions.create(

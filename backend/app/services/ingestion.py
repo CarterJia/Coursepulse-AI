@@ -63,7 +63,9 @@ def _derived_dir(document_id: uuid.UUID) -> str:
     return os.path.join(root, "derived", str(document_id))
 
 
-def run_ingestion_pipeline(document_id: uuid.UUID, job_id: uuid.UUID) -> None:
+def run_ingestion_pipeline(
+    document_id: uuid.UUID, job_id: uuid.UUID, api_key: str | None = None
+) -> None:
     """Full pipeline, owns its own DB session (runs as BackgroundTask)."""
     db = SessionLocal()
     try:
@@ -120,13 +122,13 @@ def run_ingestion_pipeline(document_id: uuid.UUID, job_id: uuid.UUID) -> None:
         logger.info("Embedded %d chunks", len(chunk_records))
 
         # 5. Two-pass report pipeline (writes all section-typed rows)
-        run_report_pipeline(db, document_id, pages, image_manifest)
+        run_report_pipeline(db, document_id, pages, image_manifest, api_key=api_key)
         db.commit()
         logger.info("Report pipeline complete for document %s", document_id)
 
         # 6. Glossary extraction
         all_text = "\n\n".join(p["text"] for p in pages)
-        for item in extract_glossary(all_text):
+        for item in extract_glossary(all_text, api_key=api_key):
             db.add(GlossaryEntry(
                 id=uuid.uuid4(),
                 document_id=document_id,

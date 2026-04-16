@@ -154,8 +154,8 @@ def build_report_prompt(query: str, chunks: list[dict[str, Any]]) -> str:
     )
 
 
-def generate_chapter_report(chapter_title: str, context: str) -> str:
-    client = get_openai_client()
+def generate_chapter_report(chapter_title: str, context: str, api_key: str | None = None) -> str:
+    client = get_openai_client(api_key=api_key)
     prompt = CHAPTER_REPORT_PROMPT.format(chapter_title=chapter_title, context=context)
     response = client.chat.completions.create(
         model="deepseek-chat",
@@ -198,9 +198,10 @@ def generate_topic_card(
     pages: list[dict],
     image_manifest: dict[int, list[str]],
     document_id: str,
+    api_key: str | None = None,
 ) -> str:
     """Pass-2: generate one topic card's Markdown."""
-    client = get_openai_client()
+    client = get_openai_client(api_key=api_key)
     prompt = TOPIC_WRITE_PROMPT.format(
         topic_title=topic["title"],
         source_pages=topic["source_pages"],
@@ -226,13 +227,16 @@ def generate_all_topic_cards(
     image_manifest: dict[int, list[str]],
     document_id: str,
     max_workers: int = MAX_PASS2_WORKERS,
+    api_key: str | None = None,
 ) -> list[str]:
     """Run Pass-2 concurrently. Returns cards in the same order as topics."""
     if not topics:
         return []
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = [
-            pool.submit(generate_topic_card, t, pages, image_manifest, document_id)
+            pool.submit(
+                generate_topic_card, t, pages, image_manifest, document_id, api_key
+            )
             for t in topics
         ]
         return [f.result() for f in futures]
@@ -266,6 +270,7 @@ def run_report_pipeline(
     document_id: _uuid.UUID,
     pages: list[dict],
     image_manifest: dict[int, list[str]],
+    api_key: str | None = None,
 ) -> None:
     """Two-pass pipeline: Pass-1 plan -> Pass-2 topic cards -> write all rows to `reports`.
 
@@ -274,7 +279,7 @@ def run_report_pipeline(
     """
     # Pass 1
     try:
-        plan = generate_plan(pages, image_manifest, max_retries=5)
+        plan = generate_plan(pages, image_manifest, max_retries=5, api_key=api_key)
         logger.info("Pass-1 plan generated for document %s", document_id)
     except PlanValidationError as e:
         logger.warning("Pass-1 failed for %s (%s); using fallback plan", document_id, e)
@@ -282,7 +287,7 @@ def run_report_pipeline(
 
     # Pass 2 (concurrent)
     topic_cards = generate_all_topic_cards(
-        plan["topics"], pages, image_manifest, document_id=str(document_id)
+        plan["topics"], pages, image_manifest, document_id=str(document_id), api_key=api_key
     )
 
     doc_id_str = str(document_id)

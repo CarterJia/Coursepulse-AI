@@ -83,7 +83,8 @@ def test_ingestion_pipeline_calls_new_reporting(
 
         # Assert run_report_pipeline was called with exactly the right arguments
         mock_report.assert_called_once_with(
-            mock_db, doc_id, mock_pages.return_value, mock_images.return_value
+            mock_db, doc_id, mock_pages.return_value, mock_images.return_value,
+            api_key=None,
         )
 
         # Assert extract_images was called BEFORE run_report_pipeline
@@ -94,7 +95,8 @@ def test_ingestion_pipeline_calls_new_reporting(
         report_index = next(
             i for i, c in enumerate(manager.mock_calls)
             if c == call.run_report_pipeline(
-                mock_db, doc_id, mock_pages.return_value, mock_images.return_value
+                mock_db, doc_id, mock_pages.return_value, mock_images.return_value,
+                api_key=None,
             )
         )
         assert images_index < report_index, (
