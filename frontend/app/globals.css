@@ -135,10 +135,14 @@
 }
 
 @layer base {
+  :root {
+    --font-sans: var(--font-inter), "PingFang SC", system-ui, sans-serif;
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
   }
 }
