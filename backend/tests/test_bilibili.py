@@ -1,6 +1,6 @@
 from unittest.mock import patch, MagicMock
 
-from app.services.bilibili import search_videos, BilibiliVideo
+from app.services.bilibili import search_videos
 
 
 def _mock_response(results: list[dict], code: int = 0) -> MagicMock:
@@ -33,14 +33,24 @@ def _make_result(
     }
 
 
-@patch("app.services.bilibili.requests.get")
-def test_search_videos_returns_filtered_results(mock_get):
-    mock_get.return_value = _mock_response([
+def _mock_session(response: MagicMock | Exception) -> MagicMock:
+    session = MagicMock()
+    if isinstance(response, Exception):
+        session.get.side_effect = response
+    else:
+        session.get.return_value = response
+    return session
+
+
+@patch("app.services.bilibili.time.sleep", lambda _s: None)
+@patch("app.services.bilibili._get_session")
+def test_search_videos_returns_filtered_results(mock_get_session):
+    mock_get_session.return_value = _mock_session(_mock_response([
         _make_result(bvid="BV1", duration="5:30", play=50000),
         _make_result(bvid="BV2", duration="15:00", play=80000),  # too long
         _make_result(bvid="BV3", duration="3:00", play=500),     # too few plays
         _make_result(bvid="BV4", duration="8:00", play=20000),
-    ])
+    ]))
     results = search_videos("蒙特卡洛树搜索 讲解")
     bvids = [v.bvid for v in results]
     assert "BV1" in bvids
@@ -49,42 +59,46 @@ def test_search_videos_returns_filtered_results(mock_get):
     assert "BV3" not in bvids
 
 
-@patch("app.services.bilibili.requests.get")
-def test_search_videos_parses_duration_correctly(mock_get):
-    mock_get.return_value = _mock_response([
+@patch("app.services.bilibili.time.sleep", lambda _s: None)
+@patch("app.services.bilibili._get_session")
+def test_search_videos_parses_duration_correctly(mock_get_session):
+    mock_get_session.return_value = _mock_session(_mock_response([
         _make_result(bvid="BV1", duration="9:59", play=20000),
         _make_result(bvid="BV2", duration="10:00", play=20000),
         _make_result(bvid="BV3", duration="1:02:00", play=20000),
-    ])
+    ]))
     results = search_videos("test")
     assert len(results) == 1
     assert results[0].bvid == "BV1"
     assert results[0].duration_seconds == 599
 
 
-@patch("app.services.bilibili.requests.get")
-def test_search_videos_returns_empty_on_api_error(mock_get):
-    mock_get.side_effect = Exception("network error")
+@patch("app.services.bilibili.time.sleep", lambda _s: None)
+@patch("app.services.bilibili._get_session")
+def test_search_videos_returns_empty_on_api_error(mock_get_session):
+    mock_get_session.return_value = _mock_session(Exception("network error"))
     results = search_videos("test")
     assert results == []
 
 
-@patch("app.services.bilibili.requests.get")
-def test_search_videos_returns_empty_on_bad_code(mock_get):
-    mock_get.return_value = _mock_response([], code=-1)
+@patch("app.services.bilibili.time.sleep", lambda _s: None)
+@patch("app.services.bilibili._get_session")
+def test_search_videos_returns_empty_on_bad_code(mock_get_session):
+    mock_get_session.return_value = _mock_session(_mock_response([], code=-1))
     results = search_videos("test")
     assert results == []
 
 
-@patch("app.services.bilibili.requests.get")
-def test_search_videos_strips_html_from_title(mock_get):
-    mock_get.return_value = _mock_response([
+@patch("app.services.bilibili.time.sleep", lambda _s: None)
+@patch("app.services.bilibili._get_session")
+def test_search_videos_strips_html_from_title(mock_get_session):
+    mock_get_session.return_value = _mock_session(_mock_response([
         _make_result(
             bvid="BV1",
             title='<em class="keyword">蒙特卡洛</em>树搜索讲解',
             play=50000,
             duration="5:00",
         ),
-    ])
+    ]))
     results = search_videos("蒙特卡洛")
     assert results[0].title == "蒙特卡洛树搜索讲解"

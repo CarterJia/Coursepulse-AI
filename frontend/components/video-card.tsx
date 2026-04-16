@@ -29,6 +29,7 @@ export function VideoCard({ video }: VideoCardProps) {
       <img
         src={video.cover_url}
         alt={video.title}
+        referrerPolicy="no-referrer"
         className="w-36 h-20 object-cover rounded shrink-0"
       />
       <div className="flex flex-col justify-between min-w-0 flex-1">
