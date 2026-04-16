@@ -67,3 +67,22 @@ def get_document(document_id: str, db: Session = Depends(get_db)):
             for r in reports
         ],
     )
+
+
+@router.delete("/documents/{document_id}/reports", status_code=204)
+def delete_document_reports(document_id: str, db: Session = Depends(get_db)):
+    """Delete all generated lecture-note reports for a single document."""
+    import uuid
+    from app.models.report import Report
+    db.query(Report).filter(Report.document_id == uuid.UUID(document_id)).delete(
+        synchronize_session=False
+    )
+    db.commit()
+
+
+@router.delete("/reports", status_code=204)
+def delete_all_reports(db: Session = Depends(get_db)):
+    """Wipe every generated lecture-note report. Documents/files are untouched."""
+    from app.models.report import Report
+    db.query(Report).delete(synchronize_session=False)
+    db.commit()
