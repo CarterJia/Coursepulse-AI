@@ -7,9 +7,9 @@ Upload a PDF, get a structured study report: topic-organized notes, glossary, an
 
 ---
 
-## What it does
+## Who it's for
 
-CoursePulse AI turns a lecture-slide PDF into a structured study report: organized by topic, surfacing exam points and common mistakes, with formulas, diagrams, and relevant teaching videos pulled from Bilibili. Built for students drowning in slides.
+International students — especially those in STEM programs juggling dense English-language slides with limited native-language study resources. CoursePulse AI turns a lecture-slide PDF into a structured study report in Chinese: organized by topic, surfacing exam points and common mistakes, with formulas, diagrams, and relevant teaching videos from Bilibili.
 
 ## Status
 
