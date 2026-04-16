@@ -9,14 +9,16 @@ _client: OpenAI | None = None
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
 
-def get_openai_client(api_key: str | None = None) -> OpenAI:
+def get_openai_client(*, api_key: str | None = None) -> OpenAI:
     """Return an OpenAI-compatible client pointed at DeepSeek.
 
-    When ``api_key`` is provided, a one-shot client is returned without touching
-    the module-level cache — this is the BYOK path. When omitted, the cached
-    client (created from ``DEEPSEEK_API_KEY``) is used.
+    When ``api_key`` is a non-None string, a one-shot client is returned without
+    touching the module-level cache — this is the BYOK path. Empty strings are
+    honored as-is (the SDK will surface them as 401s, which is the right signal
+    for a malformed BYOK header rather than silently falling back to the owner's
+    env key). When ``api_key`` is ``None``, the cached env-driven client is used.
     """
-    if api_key:
+    if api_key is not None:
         return OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
 
     global _client
