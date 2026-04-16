@@ -7,7 +7,7 @@ export function SiteHeader() {
         <Link href="/" className="font-semibold text-gray-900 tracking-tight">
           CoursePulse AI
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-gray-600">
+        <nav aria-label="Main navigation" className="flex items-center gap-6 text-sm text-gray-600">
           <Link href="/architecture" className="hover:text-gray-900 transition-colors">
             Architecture
           </Link>
