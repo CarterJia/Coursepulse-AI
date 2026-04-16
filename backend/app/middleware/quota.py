@@ -23,7 +23,9 @@ def _reset_counter_for_tests() -> None:
 def _client_ip(request: Request) -> str:
     fwd = request.headers.get("x-forwarded-for")
     if fwd:
-        return fwd.split(",")[0].strip()
+        # Use the rightmost XFF entry — proxies append their observed source
+        # IP to the right of any client-supplied value, so leftmost is forgeable.
+        return fwd.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"
 
 

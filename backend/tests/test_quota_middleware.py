@@ -74,3 +74,20 @@ def test_quota_response_header_exposes_remaining():
     resp = client.post("/api/documents/upload")
     assert resp.status_code == 200
     assert resp.headers.get("X-Quota-Remaining") == "2"
+
+
+def test_quota_xff_uses_rightmost_entry():
+    """Proxies append their observed source IP to the right of any client-supplied
+    value. Using [-1] prevents an attacker from forging the leading entry to open
+    a fresh bucket. All three requests below simulate the same real client
+    (rightmost '10.0.0.1') with rotating spoofed leading entries — they must
+    share a bucket and hit the limit on the third request.
+    """
+    client = TestClient(_build_app(limit=2))
+    headers_a = {"X-Forwarded-For": "1.1.1.1, 10.0.0.1"}
+    headers_b = {"X-Forwarded-For": "2.2.2.2, 10.0.0.1"}
+    headers_c = {"X-Forwarded-For": "3.3.3.3, 10.0.0.1"}
+    assert client.post("/api/documents/upload", headers=headers_a).status_code == 200
+    assert client.post("/api/documents/upload", headers=headers_b).status_code == 200
+    resp = client.post("/api/documents/upload", headers=headers_c)
+    assert resp.status_code == 429
