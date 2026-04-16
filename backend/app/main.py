@@ -10,6 +10,7 @@ from app.api.routes.health import router as health_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.reports import router as reports_router
 from app.api.routes.videos import router as videos_router
+from app.middleware.byok import BYOKMiddleware
 
 app = FastAPI(title="CoursePulse API")
 
@@ -30,6 +31,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(BYOKMiddleware)
 
 app.include_router(health_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
