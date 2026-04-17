@@ -2,7 +2,7 @@
 
 一个面向海外留学生的 AI 学习工具——上传课件 PDF，自动生成结构化中文讲义、术语百科和相关教学视频推荐。
 
-**[Live Demo](https://coursepulse-ai.railway.app)** · [English](README.en.md)
+[English](README.en.md)
 
 ---
 
@@ -94,18 +94,7 @@ erDiagram
     assignments ||--o{ mistake_diagnoses : analyzes
 ```
 
-可视化讲解：访问 [`/architecture`](https://coursepulse-ai.railway.app/architecture) 页。
-
-## 使用流程
-
-### 方式一：在线 Demo（无需安装）
-
-1. 打开 **[Live Demo](https://coursepulse-ai.railway.app)**
-2. 直接上传一份课件 PDF（每个 IP 每天 3 次免费额度）
-3. 等待 1–3 分钟，页面会自动轮询处理进度，完成后跳转到报告页
-4. 想要无限次使用：点击上传区下方 **"Use my own API key"**，填入你的 [DeepSeek API key](https://platform.deepseek.com/api_keys)，即可绕过配额限制（key 仅存于浏览器 localStorage，不会传到服务端日志）
-
-### 方式二：本地部署
+## 本地部署
 
 **前置条件：** [Docker Desktop](https://www.docker.com/products/docker-desktop/)（确保已启动）、一个 [DeepSeek API key](https://platform.deepseek.com/api_keys)
 
@@ -140,7 +129,7 @@ frontend |   - Local: http://0.0.0.0:3000
 - FastAPI / SQLAlchemy / Alembic
 - Postgres 16 / pgvector
 - DeepSeek Chat / BAAI/bge-small-zh-v1.5
-- Docker Compose / Railway
+- Docker Compose
 
 ## License
 

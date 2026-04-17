@@ -2,7 +2,7 @@
 
 An AI study tool for international students — upload lecture slides as PDF, get structured Chinese study notes, glossary, and relevant teaching video recommendations.
 
-**[Live Demo](https://coursepulse-ai.railway.app)** · [中文](README.md)
+[中文](README.md)
 
 ---
 
@@ -94,18 +94,7 @@ erDiagram
     assignments ||--o{ mistake_diagnoses : analyzes
 ```
 
-Visual explainer: [`/architecture`](https://coursepulse-ai.railway.app/architecture).
-
-## Getting Started
-
-### Option 1: Live Demo (no install)
-
-1. Open **[Live Demo](https://coursepulse-ai.railway.app)**
-2. Upload a lecture PDF (3 free uploads per IP per day)
-3. Wait 1–3 minutes — the page polls for progress and redirects to the report when ready
-4. For unlimited uploads: click **"Use my own API key"** below the upload area, paste your [DeepSeek API key](https://platform.deepseek.com/api_keys) — the key stays in your browser's localStorage only, never touches server logs
-
-### Option 2: Run locally
+## Run Locally
 
 **Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running), a [DeepSeek API key](https://platform.deepseek.com/api_keys)
 
@@ -140,7 +129,7 @@ frontend |   - Local: http://0.0.0.0:3000
 - FastAPI / SQLAlchemy / Alembic
 - Postgres 16 / pgvector
 - DeepSeek Chat / BAAI/bge-small-zh-v1.5
-- Docker Compose / Railway
+- Docker Compose
 
 ## License
 
