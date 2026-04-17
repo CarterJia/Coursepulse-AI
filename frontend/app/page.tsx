@@ -38,21 +38,6 @@ export default function HomePage() {
           >
             Upload your slides
           </a>
-          <button
-            type="button"
-            onClick={async () => {
-              const { getSampleDocumentId } = await import("@/lib/api");
-              const id = await getSampleDocumentId();
-              if (id) {
-                window.location.href = `/documents/${id}`;
-              } else {
-                alert("Sample document is not configured yet. Check back later!");
-              }
-            }}
-            className="inline-flex items-center rounded-md border border-gray-300 bg-white text-gray-900 px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            Try the sample
-          </button>
         </div>
       </section>
 
@@ -89,7 +74,7 @@ export default function HomePage() {
       <section id="upload" className="space-y-6">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Upload</h2>
-          <p className="mt-1 text-sm text-gray-600">PDF only. Default quota: 3 uploads per IP per day.</p>
+          <p className="mt-1 text-sm text-gray-600">PDF only.</p>
         </div>
 
         <UploadForm

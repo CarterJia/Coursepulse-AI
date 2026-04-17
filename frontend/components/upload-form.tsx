@@ -4,8 +4,6 @@ import { useRef, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { uploadDocument } from "@/lib/api";
-import { BYOKInput } from "@/components/byok-input";
-import { QuotaIndicator } from "@/components/quota-indicator";
 
 interface UploadFormProps {
   onUploaded?: (data: { document_id: string; job_id: string }) => void;
@@ -15,7 +13,6 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFile = useCallback(
@@ -24,7 +21,6 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
       setError(null);
       try {
         const data = await uploadDocument(file);
-        setRemaining(data.quota_remaining);
         onUploaded?.(data);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Upload failed");
@@ -70,11 +66,6 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
           </Button>
         </CardContent>
       </Card>
-
-      <div className="flex items-center justify-between">
-        <QuotaIndicator remaining={remaining} />
-        <BYOKInput />
-      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

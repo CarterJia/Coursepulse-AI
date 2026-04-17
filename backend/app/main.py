@@ -14,8 +14,6 @@ from app.api.routes.health import router as health_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.reports import router as reports_router
 from app.api.routes.videos import router as videos_router
-from app.middleware.byok import BYOKMiddleware
-from app.middleware.quota import QuotaMiddleware
 from app.core.config import settings
 
 app = FastAPI(title="CoursePulse API")
@@ -32,23 +30,12 @@ async def reject_path_traversal(request: Request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://frontend-production-2216.up.railway.app",
-    ],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Middleware runs in reverse of registration — BYOK registered last so it
-# runs first, setting request.state.user_api_key before Quota checks it.
-app.add_middleware(
-    QuotaMiddleware,
-    limit=settings.upload_quota_per_ip,
-    guarded_path="/api/documents/upload",
-)
-app.add_middleware(BYOKMiddleware)
 
 app.include_router(health_router, prefix="/api")
 app.include_router(documents_router, prefix="/api")
