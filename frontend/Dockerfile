@@ -19,6 +19,5 @@ WORKDIR /app/frontend
 COPY --from=builder /app/frontend/.next ./.next
 COPY --from=builder /app/frontend/node_modules ./node_modules
 COPY --from=builder /app/frontend/package.json ./package.json
-COPY --from=builder /app/frontend/public ./public
 
 CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3000"]
