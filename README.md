@@ -47,10 +47,10 @@ Browser
     ┌────┴────┐
     ▼         ▼
 ┌────────┐  ┌──────────┐
-│Postgres │  │ DeepSeek │
-│pgvector │  │ Chat API │
-│ (5432)  │  │ + BAAI   │
-└────────┘  │ Embedding│
+│Postgres │  │ LLM API  │
+│pgvector │  │ (any     │
+│ (5432)  │  │ OpenAI-  │
+└────────┘  │ compat.) │
             └──────────┘
 ```
 
@@ -62,7 +62,7 @@ Browser
 flowchart LR
     A["① 解析\nPyMuPDF 提取\n逐页文本+图片"] --> B["② 切片\n按语义段落\n切分知识块"]
     B --> C["③ 向量化\nBAI/bge-small-zh\n写入 pgvector"]
-    C --> D["④ Pass-1 规划\nDeepSeek 生成\n章节大纲"]
+    C --> D["④ Pass-1 规划\nLLM 生成\n章节大纲"]
     D --> E["⑤ Pass-2 撰写\n逐章节扩写\n考点+易错点+公式"]
     E --> F["⑥ 视频推荐\nB站搜索+向量\n相似度排序"]
 ```
@@ -71,13 +71,12 @@ flowchart LR
 
 | 决策 | 选择 | 理由 |
 |------|------|------|
-| LLM | DeepSeek Chat | 中文理科内容质量高，成本低于 GPT-4o |
+| LLM | 可插拔（DeepSeek / OpenAI / Ollama） | 通过环境变量切换，兼容任何 OpenAI-compatible API |
 | Embedding | BAAI/bge-small-zh-v1.5 | 中文语义匹配优于 OpenAI 英文模型 |
 | 报告生成 | 两阶段（规划→撰写）| 单次生成容易遗漏章节或结构混乱 |
 | 视频推荐 | B 站爬虫 + 向量相似度 | 无官方 API；余弦相似度过滤噪声 |
 | 向量存储 | pgvector | 不引入额外基础设施，复用 Postgres |
 | 异步任务 | FastAPI BackgroundTasks | 单用户场景，避免 Celery/Redis 复杂度 |
-| 配额控制 | 内存计数 + BYOK 旁路 | 无需 Redis；BYOK 用户自带 key 不受限 |
 
 ### 数据库核心表
 
@@ -96,7 +95,7 @@ erDiagram
 
 ## 本地部署
 
-**前置条件：** [Docker Desktop](https://www.docker.com/products/docker-desktop/)（确保已启动）、一个 [DeepSeek API key](https://platform.deepseek.com/api_keys)
+**前置条件：** [Docker Desktop](https://www.docker.com/products/docker-desktop/)（确保已启动）、一个 LLM API key（支持 [DeepSeek](https://platform.deepseek.com/api_keys)、[OpenAI](https://platform.openai.com/api-keys) 或任何 OpenAI 兼容 API）
 
 ```bash
 # 1. 克隆仓库
@@ -105,7 +104,8 @@ cd Coursepulse-AI
 
 # 2. 配置环境变量
 cp .env.example .env
-# 用编辑器打开 .env，把 DEEPSEEK_API_KEY=sk-your-deepseek-key-here 替换成你的真实 key
+# 编辑 .env，填入 LLM_API_KEY、LLM_BASE_URL、LLM_MODEL
+# 默认使用 DeepSeek，也可切换为 OpenAI 或 Ollama（见 .env.example 注释）
 
 # 3. 启动所有服务（首次构建约 3–5 分钟）
 docker compose up
@@ -120,7 +120,7 @@ frontend |   - Local: http://0.0.0.0:3000
 ```
 
 4. 打开 http://localhost:3000
-5. 上传任意 PDF 课件，等待进度条完成（通常 1–3 分钟，取决于课件页数和 DeepSeek API 响应速度）
+5. 上传任意 PDF 课件，等待进度条完成（通常 1–3 分钟，取决于课件页数和 LLM API 响应速度）
 6. 报告生成后自动跳转——你会看到按主题分段的中文讲义、术语卡片和 B 站视频推荐
 
 ## 技术栈
@@ -128,7 +128,8 @@ frontend |   - Local: http://0.0.0.0:3000
 - Next.js 15 / TypeScript / Tailwind / shadcn/ui
 - FastAPI / SQLAlchemy / Alembic
 - Postgres 16 / pgvector
-- DeepSeek Chat / BAAI/bge-small-zh-v1.5
+- LLM: 任何 OpenAI-compatible API（DeepSeek / GPT-4o / Ollama 等）
+- Embedding: BAAI/bge-small-zh-v1.5
 - Docker Compose
 
 ## License

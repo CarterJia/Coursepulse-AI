@@ -158,7 +158,7 @@ def generate_chapter_report(chapter_title: str, context: str, api_key: str | Non
     client = get_openai_client(api_key=api_key)
     prompt = CHAPTER_REPORT_PROMPT.format(chapter_title=chapter_title, context=context)
     response = client.chat.completions.create(
-        model="deepseek-chat",
+        model=settings.llm_model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
     )
@@ -214,7 +214,7 @@ def generate_topic_card(
         pages_block=_build_topic_pages_block(pages, topic["source_pages"]),
     )
     response = client.chat.completions.create(
-        model="deepseek-chat",
+        model=settings.llm_model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.4,
     )

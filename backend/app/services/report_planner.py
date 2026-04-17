@@ -9,6 +9,7 @@ import json
 import logging
 from typing import Any
 
+from app.core.config import settings
 from app.services.openai_client import get_openai_client
 from app.services.prompts import REPORT_PLAN_PROMPT, build_retry_prompt
 
@@ -148,7 +149,7 @@ def generate_plan(
         content = ""
         try:
             response = client.chat.completions.create(
-                model="deepseek-chat",
+                model=settings.llm_model,
                 messages=[{"role": "user", "content": current_prompt}],
                 response_format={"type": "json_object"},
                 temperature=0.2,

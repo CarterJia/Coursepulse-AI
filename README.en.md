@@ -47,10 +47,10 @@ Browser
     ┌────┴────┐
     ▼         ▼
 ┌────────┐  ┌──────────┐
-│Postgres │  │ DeepSeek │
-│pgvector │  │ Chat API │
-│ (5432)  │  │ + BAAI   │
-└────────┘  │ Embedding│
+│Postgres │  │ LLM API  │
+│pgvector │  │ (any     │
+│ (5432)  │  │ OpenAI-  │
+└────────┘  │ compat.) │
             └──────────┘
 ```
 
@@ -62,7 +62,7 @@ After a user uploads a PDF, the backend generates a full report in 6 steps:
 flowchart LR
     A["① Parse\nPyMuPDF extracts\nper-page text+images"] --> B["② Chunk\nSplit into\nknowledge blocks"]
     B --> C["③ Embed\nBAI/bge-small-zh\nstore in pgvector"]
-    C --> D["④ Pass-1 Plan\nDeepSeek generates\nchapter outline"]
+    C --> D["④ Pass-1 Plan\nLLM generates\nchapter outline"]
     D --> E["⑤ Pass-2 Write\nExpand each chapter\nexam points+formulas"]
     E --> F["⑥ Video Match\nBilibili search+\ncosine similarity"]
 ```
@@ -71,13 +71,12 @@ flowchart LR
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| LLM | DeepSeek Chat | Strong Chinese STEM output, fraction of GPT-4o cost |
+| LLM | Pluggable (DeepSeek / OpenAI / Ollama) | Swap via env vars; any OpenAI-compatible API works |
 | Embedding | BAAI/bge-small-zh-v1.5 | Chinese semantic matching outperforms OpenAI English models |
 | Report generation | Two-pass (plan → write) | Single-pass often drops chapters or loses structure |
 | Video recommendations | Bilibili scraper + vector similarity | No official API; cosine similarity filters noise |
 | Vector storage | pgvector | Reuses Postgres, no extra infrastructure |
 | Async tasks | FastAPI BackgroundTasks | Single-user scenario, avoids Celery/Redis complexity |
-| Rate limiting | In-memory counter + BYOK bypass | No Redis needed; BYOK users bring their own key |
 
 ### Database Schema
 
@@ -96,7 +95,7 @@ erDiagram
 
 ## Run Locally
 
-**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running), a [DeepSeek API key](https://platform.deepseek.com/api_keys)
+**Prerequisites:** [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running), an LLM API key ([DeepSeek](https://platform.deepseek.com/api_keys), [OpenAI](https://platform.openai.com/api-keys), or any OpenAI-compatible API)
 
 ```bash
 # 1. Clone the repo
@@ -105,7 +104,8 @@ cd Coursepulse-AI
 
 # 2. Configure environment
 cp .env.example .env
-# Open .env and replace DEEPSEEK_API_KEY=sk-your-deepseek-key-here with your real key
+# Edit .env: set LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+# Defaults to DeepSeek; switch to OpenAI or Ollama (see .env.example for examples)
 
 # 3. Start all services (first build takes ~3–5 minutes)
 docker compose up
@@ -120,7 +120,7 @@ frontend |   - Local: http://0.0.0.0:3000
 ```
 
 4. Open http://localhost:3000
-5. Upload any lecture PDF and wait for the progress indicator to complete (typically 1–3 minutes depending on page count and DeepSeek API latency)
+5. Upload any lecture PDF and wait for the progress indicator to complete (typically 1–3 minutes depending on page count and LLM API latency)
 6. Once ready, you'll be redirected to the report — topic-organized Chinese notes, glossary cards, and Bilibili video recommendations
 
 ## Stack
@@ -128,7 +128,8 @@ frontend |   - Local: http://0.0.0.0:3000
 - Next.js 15 / TypeScript / Tailwind / shadcn/ui
 - FastAPI / SQLAlchemy / Alembic
 - Postgres 16 / pgvector
-- DeepSeek Chat / BAAI/bge-small-zh-v1.5
+- LLM: any OpenAI-compatible API (DeepSeek / GPT-4o / Ollama, etc.)
+- Embedding: BAAI/bge-small-zh-v1.5
 - Docker Compose
 
 ## License

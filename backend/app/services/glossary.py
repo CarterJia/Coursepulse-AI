@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 
+from app.core.config import settings
 from app.services.openai_client import get_openai_client
 from app.services.prompts import GLOSSARY_EXTRACT_PROMPT
 
@@ -14,7 +15,7 @@ def extract_glossary(text: str, api_key: str | None = None) -> list[dict[str, st
     prompt = GLOSSARY_EXTRACT_PROMPT.format(text=text)
     try:
         response = client.chat.completions.create(
-            model="deepseek-chat",
+            model=settings.llm_model,
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"},
             temperature=0.2,
