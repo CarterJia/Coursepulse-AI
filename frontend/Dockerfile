@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app/frontend
 
@@ -7,4 +7,18 @@ RUN npm install
 
 COPY frontend /app/frontend
 
-CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
+RUN npm run build
+
+FROM node:22-alpine
+
+WORKDIR /app/frontend
+
+COPY --from=builder /app/frontend/.next ./.next
+COPY --from=builder /app/frontend/node_modules ./node_modules
+COPY --from=builder /app/frontend/package.json ./package.json
+COPY --from=builder /app/frontend/public ./public
+
+CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3000"]
